@@ -1,4 +1,4 @@
-import express, { type Request, type Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import config from './config/env.js';
 import { connectDB } from './config/db.js';
