@@ -1,5 +1,5 @@
 import { type Request, type Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
 import config from '../config/env.js'
 import * as authService from '../services/auth.js';
 import { requireFields } from '../middleware/errorHandler.js';
@@ -40,4 +40,10 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
         console.error('Verify failed:', err);
         res.status(500).send('Something went wrong');
     }
+}
+
+export async function getMe(req: Request, res: Response): Promise<void> {
+    const { id } = req.auth as JwtPayload;
+    const user = await authService.getUserById(id);
+    res.status(200).json({ user: { id: user._id, email: user.email, verified: user.verified } });
 }

@@ -60,3 +60,11 @@ export async function verifyEmailToken(rawToken: string) {
     await user.save();
     return user;
 }
+
+export async function getUserById(id: string) {
+    const user = await User.findById(id);
+    if (!user) {
+        throw new AppError(404, 'User not found');
+    }
+    return user;
+}
