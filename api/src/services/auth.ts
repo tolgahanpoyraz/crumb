@@ -98,7 +98,7 @@ export async function resetPassword(rawToken: string, newPassword: string): Prom
     await user.save();
 }
 
-export async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+export async function changePassword(userId: string, currentPassword: string, newPassword: string) {
     const user = await User.findById(userId).select('+password');
     if (!user) {
         throw new AppError(404, 'User not found');
@@ -111,6 +111,7 @@ export async function changePassword(userId: string, currentPassword: string, ne
 
     user.password = newPassword;
     await user.save();
+    return user;
 }
 
 export async function getUserById(id: string) {

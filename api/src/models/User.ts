@@ -9,10 +9,12 @@ export interface IUser {
     verificationTokenExpires?: Date,
     resetToken?: string,
     resetTokenExpires?: Date,
+    passwordChangedAt?: Date,
 }
 
 interface IUserMethods {
     comparePassword(candidate: string): Promise<boolean>;
+    passwordChangedAfter(tokenIssuedAtSeconds: number): boolean;
 }
 
 type UserModel = Model<IUser, {}, IUserMethods>;
@@ -26,6 +28,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
         verificationTokenExpires: { type: Date, select: false },
         resetToken: { type: String, select: false },
         resetTokenExpires: { type: Date, select: false },
+        passwordChangedAt: { type: Date, select: false },
     }
 )
 
@@ -34,10 +37,19 @@ userSchema.pre('save', async function () {
         return;
     }
     this.password = await bcrypt.hash(this.password, 12);
+    this.passwordChangedAt = new Date(Date.now() - 1000);
 });
 
 userSchema.methods.comparePassword = async function (candidate: string) {
     return bcrypt.compare(candidate, this.password);
+};
+
+userSchema.methods.passwordChangedAfter = function (tokenIssuedAtSeconds: number): boolean {
+    if (!this.passwordChangedAt) {
+        return false;
+    }
+    const changedAtSeconds = Math.floor(this.passwordChangedAt.getTime() / 1000);
+    return changedAtSeconds > tokenIssuedAtSeconds;
 };
 
 export const User = model<IUser, UserModel>('User', userSchema);

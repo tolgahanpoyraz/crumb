@@ -5,6 +5,10 @@ import * as authService from '../services/auth.js';
 import { requireFields } from '../middleware/errorHandler.js';
 import { AppError } from '../errors.js';
 
+function signToken(userId: unknown): string {
+    return jwt.sign({ id: userId }, config.jwtSecret, { expiresIn: '24h' });
+}
+
 export async function registerUser(req: Request, res: Response): Promise<void> {
     const { email, password } = req.body as { email?: string, password?: string };
     requireFields({ email, password }, ['email', 'password']);
@@ -18,7 +22,7 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
     requireFields({ email, password }, ['email', 'password']);
 
     const user = await authService.login(email!, password!);
-    const token = jwt.sign({ id: user._id }, config.jwtSecret, { expiresIn: '24h' });
+    const token = signToken(user._id);
     res.status(200).json({ token, user: { id: user._id, email: user.email } });
 }
 
@@ -61,8 +65,9 @@ export async function changePassword(req: Request, res: Response): Promise<void>
     const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
     requireFields({ currentPassword, newPassword }, ['currentPassword', 'newPassword']);
 
-    await authService.changePassword(id, currentPassword!, newPassword!);
-    res.status(200).json({ message: 'Password changed successfully.' });
+    const user = await authService.changePassword(id, currentPassword!, newPassword!);
+    const token = signToken(user._id);
+    res.status(200).json({ token, message: 'Password changed successfully.' });
 }
 
 export async function forgotPassword(req: Request, res: Response): Promise<void> {
