@@ -1,0 +1,447 @@
+openapi: 3.0.3
+info:
+  title: Big Project API
+  version: 0.1.0
+  description: >
+    Authentication API for the COP4331 project. Provides registration with
+    email verification, JWT-based login, password reset (forgot flow), and
+    authenticated password change. All endpoints are served under the `/api`
+    prefix.
+
+servers:
+  - url: http://localhost:5001/api
+    description: Local development
+
+tags:
+  - name: Health
+    description: Service liveness
+  - name: Auth
+    description: Registration, login, verification, and password management
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new account
+      description: >
+        Creates an unverified account and sends a verification email. The
+        account cannot log in until the email is verified.
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created; verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: Registered. Check your email to verify your account
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Email already in use
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in and receive a JWT
+      description: Returns a 24h JWT. Rejects unverified accounts with 403.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid credentials
+        '403':
+          description: Email not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Email not verified
+
+  /auth/verify:
+    get:
+      tags: [Auth]
+      summary: Verify an email address
+      description: >
+        Consumes the token from the verification email. Returns an HTML page
+        (this URL is opened directly from the email), not JSON.
+      operationId: verifyEmail
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Raw verification token from the email link
+      responses:
+        '200':
+          description: Email verified
+          content:
+            text/html:
+              schema:
+                type: string
+        '400':
+          description: Missing, invalid, or expired token
+          content:
+            text/html:
+              schema:
+                type: string
+        '500':
+          description: Unexpected error
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Resend the verification email
+      description: >
+        Always returns 200 regardless of whether the email exists or is already
+        verified, to avoid leaking which addresses are registered.
+      operationId: resendVerification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+      responses:
+        '200':
+          description: Generic acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: If that account exists and is unverified, a verification email has been sent.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password reset email
+      description: >
+        Always returns 200 regardless of whether the email exists, to avoid
+        leaking which addresses are registered. Reset tokens expire after 1 hour.
+      operationId: forgotPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+      responses:
+        '200':
+          description: Generic acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: If that account exists, a password reset email has been sent.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password using a token
+      description: >
+        Consumes the token from the reset email and sets a new password. This
+        invalidates all existing sessions; the user must log in again.
+      operationId: resetPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: Password has been reset. You can now log in.
+        '400':
+          description: Missing fields, or invalid/expired reset token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid or expired reset token
+
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change password while logged in
+      description: >
+        Requires the current password. On success, all other sessions are
+        invalidated and a fresh JWT is returned so the calling client stays
+        logged in. Clients must replace their stored token with the returned one.
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed; new token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangePasswordResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: Current password incorrect, or missing/invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Current password is incorrect
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: User not found
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the current user
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT issued by /auth/login or /auth/change-password. Send as
+        `Authorization: Bearer <token>`. Tokens expire after 24h and are
+        invalidated when the account's password changes.
+
+  responses:
+    ValidationError:
+      description: A required field is missing
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: email is required
+    Unauthorized:
+      description: Missing, invalid, or expired token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Invalid or expired token
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    HealthResponse:
+      type: object
+      required: [status, uptime]
+      properties:
+        status:
+          type: string
+          example: ok
+        uptime:
+          type: number
+          description: Process uptime in seconds
+          example: 12.34
+
+    User:
+      type: object
+      required: [id, email]
+      properties:
+        id:
+          type: string
+          example: 665f1c2e9b1e8a0012a3b4c5
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        verified:
+          type: boolean
+          example: true
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: hunter2
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: hunter2
+
+    EmailRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          description: Raw reset token from the email link
+        password:
+          type: string
+          format: password
+          description: The new password
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+          format: password
+        newPassword:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          description: JWT, valid for 24h
+        user:
+          $ref: '#/components/schemas/User'
+
+    ChangePasswordResponse:
+      type: object
+      required: [token, message]
+      properties:
+        token:
+          type: string
+          description: Fresh JWT that replaces the caller's now-invalidated token
+        message:
+          type: string
+
+    MeResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
