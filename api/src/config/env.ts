@@ -8,6 +8,9 @@ interface Config {
     sendgridApiKey: string;
     sendgridFromEmail: string;
     appUrl: string;
+    corsOrigins: string[];
+    awsRegion: string;
+    s3Bucket: string;
 }
 
 function required(key: string) {
@@ -25,6 +28,9 @@ const config: Config = {
     sendgridApiKey: required('SENDGRID_API_KEY'),
     sendgridFromEmail: required('SENDGRID_FROM_EMAIL'),
     appUrl: process.env.APP_URL ?? 'http://localhost:5001',
+    corsOrigins: (process.env.CORS_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    awsRegion: process.env.AWS_REGION ?? 'us-east-1',
+    s3Bucket: process.env.S3_BUCKET ?? '',
 }
 
 export default config;
