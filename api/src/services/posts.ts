@@ -1,24 +1,22 @@
 import { Post, type IPost, type VoteType } from '../models/Post.js';
-import { applyVote, decayE, sigmoid, statusFromConfidence } from '../confidence.js';
+import { applyVote, decayE, sigmoid, statusFromConfidence, expiryFromE, E_INITIAL } from '../confidence.js';
 import { AppError } from '../errors.js';
 
 type NewPost = Pick<IPost, 'foodName' | 'location' | 'badges' | 'imageKey'>;
 
 export async function createPost(authorId: string, data: NewPost) {
-    return Post.create({ ...data, author: authorId });
+    const now = new Date();
+    return Post.create({ ...data, author: authorId, lastUpdate: now, expiresAt: expiryFromE(E_INITIAL, now) });
 }
 
 export async function listFeed() {
-    const now = Date.now();
-    const posts = await Post.find().lean();
-    return posts
-        .map((post) => {
-            const minutes = (now - new Date(post.lastUpdate).getTime()) / 60000;
-            const confidence = sigmoid(decayE(post.E, minutes));
-            return { ...post, confidence, status: statusFromConfidence(confidence) };
-        })
-        .filter((post) => post.status !== 'gone')
-        .sort((a, b) => b.confidence - a.confidence);
+    const now = new Date();
+    const posts = await Post.find({ expiresAt: { $gt: now } }).sort({ expiresAt: -1 }).lean();
+    return posts.map((post) => {
+        const minutes = (now.getTime() - new Date(post.lastUpdate).getTime()) / 60000;
+        const confidence = sigmoid(decayE(post.E, minutes));
+        return { ...post, confidence, status: statusFromConfidence(confidence) };
+    });
 }
 
 export async function vote(postId: string, userId: string, type: VoteType) {
@@ -37,6 +35,7 @@ export async function vote(postId: string, userId: string, type: VoteType) {
     const E = applyVote(decayE(post.E, minutes), type);
     const confidence = sigmoid(E);
     const status = statusFromConfidence(confidence);
+    const expiresAt = expiryFromE(E, now);
     const tallies = {
         present: post.tallies.present + (type === 'present' ? 1 : 0),
         gone: post.tallies.gone + (type === 'gone' ? 1 : 0),
@@ -47,7 +46,7 @@ export async function vote(postId: string, userId: string, type: VoteType) {
         {
             $push: { votes: { user: userId, type, at: now } },
             $inc: { [`tallies.${type}`]: 1 },
-            $set: { E, status, lastUpdate: now },
+            $set: { E, status, lastUpdate: now, expiresAt },
         },
     );
     if (res.matchedCount === 0) {

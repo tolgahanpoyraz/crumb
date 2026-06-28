@@ -18,6 +18,7 @@ export interface IPost {
     author: Types.ObjectId;
     E: number;
     lastUpdate: Date;
+    expiresAt: Date;
     tallies: { present: number; gone: number };
     status: PostStatus;
     votes: IVote[];
@@ -43,6 +44,7 @@ const postSchema = new Schema<IPost, PostModel>(
         author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         E: { type: Number, default: E_INITIAL },
         lastUpdate: { type: Date, default: Date.now },
+        expiresAt: { type: Date },
         tallies: {
             present: { type: Number, default: 0 },
             gone: { type: Number, default: 0 },
@@ -52,5 +54,7 @@ const postSchema = new Schema<IPost, PostModel>(
     },
     { timestamps: true },
 );
+
+postSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const Post = model<IPost, PostModel>('Post', postSchema);
