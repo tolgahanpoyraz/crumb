@@ -3,10 +3,11 @@ info:
   title: Big Project API
   version: 0.1.0
   description: >
-    Authentication API for the COP4331 project. Provides registration with
-    email verification, JWT-based login, password reset (forgot flow), and
-    authenticated password change. All endpoints are served under the `/api`
-    prefix.
+    API for the COP4331 "Free Food" project. Covers authentication (registration
+    with email verification, JWT-based login, password reset and change) and the
+    food posts feature: creating posts, a confidence-ranked live feed,
+    one-vote-per-user voting, and presigned image uploads. All endpoints are
+    served under the `/api` prefix.
 
 servers:
   - url: http://localhost:5001/api
@@ -17,6 +18,8 @@ tags:
     description: Service liveness
   - name: Auth
     description: Registration, login, verification, and password management
+  - name: Posts
+    description: Food posts feed, voting, and image uploads
 
 paths:
   /health:
@@ -290,6 +293,135 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /posts:
+    get:
+      tags: [Posts]
+      summary: List the live feed
+      description: >
+        Returns active posts (those not yet expired), most-alive-first. Each post
+        includes a freshly computed `confidence` and `status`. Public; no auth.
+      operationId: getFeed
+      security: []
+      responses:
+        '200':
+          description: The current feed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedResponse'
+    post:
+      tags: [Posts]
+      summary: Create a food post
+      description: >
+        Creates a post seeded at a high starting confidence. If an image was
+        uploaded via /posts/upload-url, pass the returned key as `imageKey`.
+      operationId: createPost
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePostResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /posts/upload-url:
+    get:
+      tags: [Posts]
+      summary: Get a presigned image upload URL
+      description: >
+        Returns a short-lived (120s) presigned S3 PUT URL and the object key. The
+        client PUTs the image bytes directly to `url`, then creates the post with
+        `imageKey` set to `key`. Image bytes never pass through this API.
+      operationId: getUploadUrl
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A presigned upload URL and its key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Image uploads are not configured (no S3 bucket set)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Image uploads are not configured
+
+  /posts/{id}/vote:
+    post:
+      tags: [Posts]
+      summary: Vote on a post
+      description: >
+        Records a "still here" or "gone" vote. Each user may vote once per post.
+        The vote shifts the post's confidence and may expire it immediately.
+      operationId: votePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The post's id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteRequest'
+      responses:
+        '200':
+          description: Vote recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteResponse'
+        '400':
+          description: Missing or invalid vote type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: type must be 'present' or 'gone'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Post not found
+        '409':
+          description: The user has already voted on this post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: You have already voted on this post
+
 components:
   securitySchemes:
     bearerAuth:
@@ -445,3 +577,138 @@ components:
       properties:
         user:
           $ref: '#/components/schemas/User'
+
+    PostStatus:
+      type: string
+      enum: [fresh, likely, fading, gone]
+      description: Confidence band. Posts at "gone" are excluded from the feed.
+
+    Tallies:
+      type: object
+      required: [present, gone]
+      properties:
+        present:
+          type: integer
+          example: 3
+        gone:
+          type: integer
+          example: 1
+
+    Post:
+      type: object
+      required: [id, foodName, location, badges, author, status, tallies, expiresAt, createdAt]
+      description: >
+        A food post. Internal fields (e.g. the raw log-odds `E`) may also appear
+        in responses but are not part of the stable contract.
+      properties:
+        id:
+          type: string
+          example: 665f1c2e9b1e8a0012a3b4c5
+        foodName:
+          type: string
+          example: Leftover Domino's
+        location:
+          type: string
+          example: HEC 101
+        imageKey:
+          type: string
+          description: S3 object key; the client builds the display URL from this.
+          example: posts/9661e87f-3b2c-4199-a797-4d91e7306955.jpg
+        badges:
+          type: array
+          items:
+            type: string
+          example: [pizza, free]
+        author:
+          type: string
+          description: Id of the user who posted it
+          example: 665f1c2e9b1e8a0012a3b4c5
+        status:
+          $ref: '#/components/schemas/PostStatus'
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: >
+            Live probability the food is still there (0–1). Computed on read, so
+            it is present on feed responses.
+          example: 0.88
+        tallies:
+          $ref: '#/components/schemas/Tallies'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the post will decay past the "gone" threshold.
+        createdAt:
+          type: string
+          format: date-time
+
+    CreatePostRequest:
+      type: object
+      required: [foodName, location]
+      properties:
+        foodName:
+          type: string
+          example: Leftover Domino's
+        location:
+          type: string
+          example: HEC 101
+        badges:
+          type: array
+          items:
+            type: string
+          example: [pizza, free]
+        imageKey:
+          type: string
+          description: Key from /posts/upload-url, if an image was uploaded.
+
+    CreatePostResponse:
+      type: object
+      required: [post]
+      properties:
+        post:
+          $ref: '#/components/schemas/Post'
+
+    FeedResponse:
+      type: object
+      required: [posts]
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+
+    VoteRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [present, gone]
+          description: '"present" = still here, "gone" = not there anymore'
+
+    VoteResponse:
+      type: object
+      required: [confidence, status, tallies]
+      properties:
+        confidence:
+          type: number
+          format: float
+          example: 0.27
+        status:
+          $ref: '#/components/schemas/PostStatus'
+        tallies:
+          $ref: '#/components/schemas/Tallies'
+
+    UploadUrlResponse:
+      type: object
+      required: [url, key]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Presigned S3 PUT URL, valid for 120 seconds.
+        key:
+          type: string
+          example: posts/9661e87f-3b2c-4199-a797-4d91e7306955.jpg
