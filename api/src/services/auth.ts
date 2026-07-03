@@ -7,7 +7,7 @@ import { AppError } from '../errors.js';
 
 const VERIFICATION_TTL = 1000 * 60 * 60 * 24;   // 24 hours
 const RESET_TTL = 1000 * 60 * 60;               // 1 hour 
-
+////
 function hashToken(raw: string): string {
     return crypto.createHash('sha256').update(raw).digest('hex')
 }
