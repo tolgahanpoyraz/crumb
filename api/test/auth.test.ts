@@ -72,6 +72,18 @@ describe('POST /api/auth/register', () => {
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/password/i);
     });
+
+    it('rejects a password shorter than 8 characters with 400', async () => {
+        const res = await register(EMAIL, 'short');
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/password/i);
+    });
+
+    it('rejects a malformed email with 400', async () => {
+        const res = await register('not-an-email', PASSWORD);
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/email/i);
+    });
 });
 
 describe('POST /api/auth/login', () => {
@@ -178,6 +190,12 @@ describe('POST /api/auth/reset-password', () => {
     it('rejects an invalid token with 400', async () => {
         const res = await request(app).post('/api/auth/reset-password').send({ token: 'bogus', password: NEW_PASSWORD });
         expect(res.status).toBe(400);
+    });
+
+    it('rejects a short new password with 400', async () => {
+        const res = await request(app).post('/api/auth/reset-password').send({ token: 'bogus', password: 'short' });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/password/i);
     });
 });
 

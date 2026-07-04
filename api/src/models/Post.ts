@@ -4,12 +4,6 @@ import { E_INITIAL } from '../confidence.js';
 export type VoteType = 'present' | 'gone';
 export type PostStatus = 'fresh' | 'likely' | 'fading' | 'gone';
 
-export interface IVote {
-    user: Types.ObjectId;
-    type: VoteType;
-    at: Date;
-}
-
 export interface IPost {
     foodName: string;
     location: string;
@@ -21,19 +15,9 @@ export interface IPost {
     expiresAt: Date;
     tallies: { present: number; gone: number };
     status: PostStatus;
-    votes: IVote[];
 }
 
 type PostModel = Model<IPost>;
-
-const voteSchema = new Schema<IVote>(
-    {
-        user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        type: { type: String, enum: ['present', 'gone'], required: true },
-        at: { type: Date, default: Date.now },
-    },
-    { _id: false },
-);
 
 const postSchema = new Schema<IPost, PostModel>(
     {
@@ -50,7 +34,6 @@ const postSchema = new Schema<IPost, PostModel>(
             gone: { type: Number, default: 0 },
         },
         status: { type: String, enum: ['fresh', 'likely', 'fading', 'gone'], default: 'fresh' },
-        votes: { type: [voteSchema], default: [], select: false },
     },
     { timestamps: true },
 );

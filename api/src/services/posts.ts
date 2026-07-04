@@ -1,4 +1,5 @@
 import { Post, type IPost, type VoteType } from '../models/Post.js';
+import { Vote } from '../models/Vote.js';
 import { applyVote, decayE, sigmoid, statusFromConfidence, expiryFromE, E_INITIAL } from '../confidence.js';
 import { AppError } from '../errors.js';
 
@@ -21,13 +22,13 @@ export async function listFeed() {
 
 export async function vote(postId: string, userId: string, type: VoteType) {
     const now = new Date();
-    const post = await Post.findById(postId).select('+votes');
+    const post = await Post.findById(postId);
 
     if (!post) {
         throw new AppError(404, 'Post not found');
     }
 
-    if (post.votes.some((v) => v.user.toString() === userId)) {
+    if (await Vote.exists({ post: postId, user: userId })) {
         throw new AppError(409, 'You have already voted on this post');
     }
 
@@ -41,17 +42,24 @@ export async function vote(postId: string, userId: string, type: VoteType) {
         gone: post.tallies.gone + (type === 'gone' ? 1 : 0),
     };
 
-    const res = await Post.updateOne(
-        { _id: postId, 'votes.user': { $ne: userId } },
+    try {
+        await Vote.create({ post: postId, user: userId, type, expiresAt });
+    } catch (err) {
+        if ((err as { code?: number }).code === 11000) {
+            throw new AppError(409, 'You have already voted on this post');
+        }
+        throw err;
+    }
+
+    await Post.updateOne(
+        { _id: postId },
         {
-            $push: { votes: { user: userId, type, at: now } },
             $inc: { [`tallies.${type}`]: 1 },
             $set: { E, status, lastUpdate: now, expiresAt },
         },
     );
-    if (res.matchedCount === 0) {
-        throw new AppError(409, 'You have already voted on this post');
-    }
+
+    await Vote.updateMany({ post: postId }, { $set: { expiresAt } });
 
     return { confidence, status, tallies };
 }

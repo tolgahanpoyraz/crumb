@@ -12,6 +12,7 @@ vi.mock('../src/services/uploads.js', () => ({
 
 import app from '../src/app.js';
 import { Post } from '../src/models/Post.js';
+import { Vote } from '../src/models/Vote.js';
 import { sendVerificationEmail } from '../src/services/email.js';
 
 const mockedVerifyEmail = vi.mocked(sendVerificationEmail);
@@ -65,6 +66,20 @@ describe('POST /api/posts', () => {
             .send({ foodName: 'Pizza' });
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/location/i);
+    });
+
+    it('rejects a whitespace-only foodName with 400', async () => {
+        const token = await authUser();
+        const res = await createPost(token, { foodName: '   ' });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/foodName/i);
+    });
+
+    it('rejects a malformed imageKey with 400', async () => {
+        const token = await authUser();
+        const res = await createPost(token, { imageKey: 'not-a-valid-key' });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/imageKey/i);
     });
 });
 
@@ -137,7 +152,7 @@ describe('POST /api/posts/:id/vote', () => {
         const { body } = await createPost(author);
         await vote(author, body.post._id, 'present').expect(200);
         await vote(other, body.post._id, 'gone').expect(200);
-        expect((await Post.findById(body.post._id).select('+votes'))?.votes).toHaveLength(2);
+        expect(await Vote.countDocuments({ post: body.post._id })).toBe(2);
     });
 
     it('returns 404 for a nonexistent post', async () => {
@@ -150,6 +165,12 @@ describe('POST /api/posts/:id/vote', () => {
         const token = await authUser();
         const { body } = await createPost(token);
         const res = await vote(token, body.post._id, 'maybe');
+        expect(res.status).toBe(400);
+    });
+
+    it('returns 400 for a malformed post id', async () => {
+        const token = await authUser();
+        const res = await vote(token, 'not-a-valid-id', 'present');
         expect(res.status).toBe(400);
     });
 

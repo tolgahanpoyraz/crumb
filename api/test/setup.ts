@@ -2,6 +2,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
+process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret';
 process.env.SENDGRID_API_KEY = 'SG.test-key';
 process.env.SENDGRID_FROM_EMAIL = 'noreply@test.dev';

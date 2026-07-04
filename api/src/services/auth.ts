@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { type HydratedDocument } from 'mongoose';
 import { User, type IUser } from '../models/User.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from './email.js';
+import logger from '../config/logger.js';
 import { AppError } from '../errors.js';
 
 const VERIFICATION_TTL = 1000 * 60 * 60 * 24;   // 24 hours
@@ -16,7 +17,11 @@ async function issueVerificationToken(user: HydratedDocument<IUser>): Promise<vo
     user.verificationToken = hashToken(rawToken);
     user.verificationTokenExpires = new Date(Date.now() + VERIFICATION_TTL);
     await user.save();
-    await sendVerificationEmail(user.email, rawToken);
+    try {
+        await sendVerificationEmail(user.email, rawToken);
+    } catch (err) {
+        logger.error({ err, email: user.email }, 'Failed to send verification email');
+    }
 }
 
 async function issuePasswordResetToken(user: HydratedDocument<IUser>): Promise<void> {
@@ -24,7 +29,11 @@ async function issuePasswordResetToken(user: HydratedDocument<IUser>): Promise<v
     user.resetToken = hashToken(rawToken);
     user.resetTokenExpires = new Date(Date.now() + RESET_TTL);
     await user.save();
-    await sendPasswordResetEmail(user.email, rawToken);
+    try {
+        await sendPasswordResetEmail(user.email, rawToken);
+    } catch (err) {
+        logger.error({ err, email: user.email }, 'Failed to send password reset email');
+    }
 }
 
 export async function register(email: string, password: string) {

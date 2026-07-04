@@ -1,9 +1,15 @@
 import { Router, type Request, type Response } from 'express';
+import mongoose from 'mongoose';
 
 const router = Router();
 
 router.get('/', (_req: Request, res: Response) => {
-    res.json({ status: 'ok', uptime: process.uptime() });
+    const dbUp = mongoose.connection.readyState === 1;
+    res.status(dbUp ? 200 : 503).json({
+        status: dbUp ? 'ok' : 'degraded',
+        uptime: process.uptime(),
+        db: dbUp ? 'connected' : 'disconnected',
+    });
 })
 
 export default router;

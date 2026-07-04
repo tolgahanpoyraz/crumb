@@ -30,7 +30,13 @@ paths:
       security: []
       responses:
         '200':
-          description: Service is up
+          description: Service is up and the database is connected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is up but the database is disconnected
           content:
             application/json:
               schema:
@@ -468,15 +474,21 @@ components:
 
     HealthResponse:
       type: object
-      required: [status, uptime]
+      required: [status, uptime, db]
       properties:
         status:
           type: string
+          enum: [ok, degraded]
+          description: '"ok" when the database is connected, "degraded" otherwise.'
           example: ok
         uptime:
           type: number
           description: Process uptime in seconds
           example: 12.34
+        db:
+          type: string
+          enum: [connected, disconnected]
+          example: connected
 
     User:
       type: object
@@ -596,13 +608,16 @@ components:
 
     Post:
       type: object
-      required: [id, foodName, location, badges, author, status, tallies, expiresAt, createdAt]
+      required: [_id, foodName, location, badges, author, status, tallies, expiresAt, createdAt, updatedAt]
       description: >
-        A food post. Internal fields (e.g. the raw log-odds `E`) may also appear
-        in responses but are not part of the stable contract.
+        A food post. Internal fields (e.g. the raw log-odds `E` and `lastUpdate`)
+        may also appear in responses but are not part of the stable contract.
       properties:
-        id:
+        _id:
           type: string
+          description: >
+            MongoDB document id. Note: post objects expose `_id` (raw Mongoose
+            shape), whereas user objects expose `id` — use the right one per resource.
           example: 665f1c2e9b1e8a0012a3b4c5
         foodName:
           type: string
@@ -641,6 +656,9 @@ components:
           format: date-time
           description: When the post will decay past the "gone" threshold.
         createdAt:
+          type: string
+          format: date-time
+        updatedAt:
           type: string
           format: date-time
 

@@ -3,6 +3,7 @@ dotenv.config();
 
 interface Config {
     port: number;
+    nodeEnv: string;
     mongoUri: string;
     jwtSecret: string;
     sendgridApiKey: string;
@@ -23,6 +24,7 @@ function required(key: string) {
 
 const config: Config = {
     port: Number(process.env.PORT ?? 5001),
+    nodeEnv: process.env.NODE_ENV ?? 'development',
     mongoUri: process.env.MONGO_URI ?? 'mongodb://127.0.0.1:27017/bigproject',
     jwtSecret: required('JWT_SECRET'),
     sendgridApiKey: required('SENDGRID_API_KEY'),
