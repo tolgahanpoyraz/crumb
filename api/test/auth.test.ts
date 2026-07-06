@@ -6,6 +6,10 @@ vi.mock('../src/services/email.js', () => ({
     sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../src/services/uploads.js', () => ({
+    createAvatarUploadUrl: vi.fn().mockResolvedValue({ url: 'https://signed.example/put', key: 'avatars/abc.jpg' }),
+}));
+
 import app from '../src/app.js';
 import { User } from '../src/models/User.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../src/services/email.js';
@@ -263,5 +267,38 @@ describe('GET /api/auth/me', () => {
 
         await User.updateOne({ _id: id }, { passwordChangedAt: new Date(Date.now() + 10_000) });
         await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`).expect(401);
+    });
+});
+
+describe('avatar uploads', () => {
+    it('requires auth for the upload url', async () => {
+        const res = await request(app).get('/api/auth/me/avatar-upload-url');
+        expect(res.status).toBe(401);
+    });
+
+    it('returns a presigned upload url and key', async () => {
+        const { token } = await registerVerifyLogin();
+        const res = await request(app).get('/api/auth/me/avatar-upload-url').set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(res.body).toMatchObject({ url: expect.any(String), key: expect.any(String) });
+    });
+
+    it('requires auth to set the avatar', async () => {
+        const res = await request(app).post('/api/auth/me/avatar');
+        expect(res.status).toBe(401);
+    });
+
+    it('sets avatarKey and shows it on /me', async () => {
+        const { token, id } = await registerVerifyLogin();
+
+        const before = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
+        expect(before.body.user.avatarKey).toBeFalsy();
+
+        const res = await request(app).post('/api/auth/me/avatar').set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(res.body.user.avatarKey).toBe(`avatars/${id}.jpg`);
+
+        const after = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
+        expect(after.body.user.avatarKey).toBe(`avatars/${id}.jpg`);
     });
 });

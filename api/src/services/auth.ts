@@ -133,6 +133,18 @@ export async function getUserById(id: string) {
     return user;
 }
 
+export async function setAvatar(userId: string) {
+    const user = await User.findByIdAndUpdate(
+        userId,
+        { avatarKey: `avatars/${userId}.jpg` },
+        { returnDocument: 'after' },
+    );
+    if (!user) {
+        throw new AppError(404, 'User not found');
+    }
+    return user;
+}
+
 export async function forgotPassword(email: string): Promise<void> {
     const user = await User.findOne({ email });
     if (user) {

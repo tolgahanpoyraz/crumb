@@ -20,3 +20,18 @@ export async function createUploadUrl() {
 
     return { url, key };
 }
+
+export async function createAvatarUploadUrl(userId: string) {
+    if (!config.s3Bucket) {
+        throw new AppError(503, 'Image uploads are not configured');
+    }
+
+    const key = `avatars/${userId}.jpg`;
+    const url = await getSignedUrl(
+        s3,
+        new PutObjectCommand({ Bucket: config.s3Bucket, Key: key, ContentType: 'image/jpeg' }),
+        { expiresIn: 120 },
+    );
+
+    return { url, key };
+}
