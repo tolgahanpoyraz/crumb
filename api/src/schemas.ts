@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { LOCATION_IDS } from './locations.js';
+import { POST_TYPES, DIETARY_TAGS, VOTE_TYPES } from './models/Post.js';
 
 const name = z.string().trim().min(1, 'Name is required').max(100);
 const email = z.string().trim().toLowerCase().pipe(z.email('Invalid email address'));
@@ -33,14 +34,15 @@ export const changePasswordSchema = z.object({
 
 export const createPostSchema = z.object({
     foodName: z.string().trim().min(1, 'foodName is required').max(100),
+    type: z.enum(POST_TYPES, { message: 'Invalid type' }),
+    dietaryTags: z.array(z.enum(DIETARY_TAGS, { message: 'Invalid dietary tag' })).max(DIETARY_TAGS.length).optional().default([]),
     location: z.enum(LOCATION_IDS, { message: 'Invalid location' }),
     locationDetail: z.string().trim().max(256).optional(),
-    badges: z.array(z.string().trim().min(1).max(30)).max(10).optional().default([]),
     imageKey: z.string().regex(/^posts\/[a-f0-9-]+\.jpg$/, 'Invalid imageKey').optional(),
 });
 
 export const voteSchema = z.object({
-    type: z.enum(['present', 'gone']),
+    type: z.enum(VOTE_TYPES),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

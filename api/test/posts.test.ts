@@ -43,7 +43,7 @@ function createPost(token: string, body: Record<string, unknown> = {}) {
     return request(app)
         .post('/api/posts')
         .set('Authorization', `Bearer ${token}`)
-        .send({ foodName: 'Bagels', location: LOCATION, ...body });
+        .send({ foodName: 'Bagels', type: 'snacks', location: LOCATION, ...body });
 }
 
 function vote(token: string, postId: string, type: string) {
@@ -61,9 +61,15 @@ describe('POST /api/posts', () => {
 
     it('creates a fresh post with a future expiry', async () => {
         const token = await authUser();
-        const res = await createPost(token, { foodName: 'Pizza', badges: ['pizza'] });
+        const res = await createPost(token, { foodName: 'Pizza', type: 'pizza', dietaryTags: ['vegetarian', 'halal'] });
         expect(res.status).toBe(201);
-        expect(res.body.post).toMatchObject({ foodName: 'Pizza', location: { id: LOCATION }, status: 'fresh' });
+        expect(res.body.post).toMatchObject({
+            foodName: 'Pizza',
+            type: 'pizza',
+            dietaryTags: ['vegetarian', 'halal'],
+            location: { id: LOCATION },
+            status: 'fresh',
+        });
         expect(new Date(res.body.post.expiresAt).getTime()).toBeGreaterThan(Date.now());
     });
 
@@ -103,6 +109,37 @@ describe('POST /api/posts', () => {
         const res = await createPost(token, { locationDetail: '2nd floor lounge' });
         expect(res.status).toBe(201);
         expect(res.body.post.locationDetail).toBe('2nd floor lounge');
+    });
+
+    it('requires a type', async () => {
+        const token = await authUser();
+        const res = await request(app)
+            .post('/api/posts')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ foodName: 'Pizza', location: LOCATION });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/type/i);
+    });
+
+    it('rejects an unknown type with 400', async () => {
+        const token = await authUser();
+        const res = await createPost(token, { type: 'dessert' });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/type/i);
+    });
+
+    it('defaults dietaryTags to an empty array', async () => {
+        const token = await authUser();
+        const res = await createPost(token);
+        expect(res.status).toBe(201);
+        expect(res.body.post.dietaryTags).toEqual([]);
+    });
+
+    it('rejects an unknown dietary tag with 400', async () => {
+        const token = await authUser();
+        const res = await createPost(token, { dietaryTags: ['vegetarian', 'carnivore'] });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/dietary/i);
     });
 });
 

@@ -630,6 +630,16 @@ components:
       enum: [fresh, likely, fading, gone]
       description: Confidence band. Posts at "gone" are excluded from the feed.
 
+    PostType:
+      type: string
+      enum: [pizza, meal, snacks, baked-goods, drinks, other]
+      description: What kind of food the post is; exactly one, required.
+      example: pizza
+
+    DietaryTag:
+      type: string
+      enum: [vegetarian, vegan, halal, kosher, gluten-free]
+
     Tallies:
       type: object
       required: [present, gone]
@@ -643,7 +653,7 @@ components:
 
     Post:
       type: object
-      required: [_id, foodName, location, badges, author, status, tallies, expiresAt, createdAt, updatedAt]
+      required: [_id, foodName, type, dietaryTags, location, author, status, tallies, expiresAt, createdAt, updatedAt]
       description: >
         A food post. Internal fields (e.g. the raw log-odds `E` and `lastUpdate`)
         may also appear in responses but are not part of the stable contract.
@@ -657,6 +667,13 @@ components:
         foodName:
           type: string
           example: Leftover Domino's
+        type:
+          $ref: '#/components/schemas/PostType'
+        dietaryTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/DietaryTag'
+          example: [vegetarian, halal]
         location:
           allOf:
             - $ref: '#/components/schemas/CampusLocation'
@@ -671,11 +688,6 @@ components:
           type: string
           description: S3 object key; the client builds the display URL from this.
           example: posts/9661e87f-3b2c-4199-a797-4d91e7306955.jpg
-        badges:
-          type: array
-          items:
-            type: string
-          example: [pizza, free]
         author:
           type: string
           description: Id of the user who posted it
@@ -706,11 +718,19 @@ components:
 
     CreatePostRequest:
       type: object
-      required: [foodName, location]
+      required: [foodName, type, location]
       properties:
         foodName:
           type: string
           example: Leftover Domino's
+        type:
+          $ref: '#/components/schemas/PostType'
+        dietaryTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/DietaryTag'
+          description: Optional; defaults to an empty array. Unknown values are rejected with 400.
+          example: [vegetarian, halal]
         location:
           type: string
           description: >
@@ -722,11 +742,6 @@ components:
           maxLength: 256
           description: Optional free-text spot within the location, e.g. a room or floor.
           example: 2nd floor lounge
-        badges:
-          type: array
-          items:
-            type: string
-          example: [pizza, free]
         imageKey:
           type: string
           description: Key from /posts/upload-url, if an image was uploaded.

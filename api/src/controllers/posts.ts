@@ -6,9 +6,9 @@ import { type CreatePostInput, type VoteInput } from '../schemas.js';
 
 export async function createPost(req: Request, res: Response): Promise<void> {
     const { id } = req.auth as JwtPayload;
-    const { foodName, location, locationDetail, badges, imageKey } = req.body as CreatePostInput;
+    const { foodName, type, dietaryTags, location, locationDetail, imageKey } = req.body as CreatePostInput;
 
-    const post = await postService.createPost(id, { foodName, location, locationDetail, badges, imageKey });
+    const post = await postService.createPost(id, { foodName, type, dietaryTags, location, locationDetail, imageKey });
     res.status(201).json({ post });
 }
 

@@ -4,7 +4,7 @@ import { applyVote, decayE, sigmoid, statusFromConfidence, expiryFromE, E_INITIA
 import { resolveLocation } from '../locations.js';
 import { AppError } from '../errors.js';
 
-type NewPost = Pick<IPost, 'foodName' | 'location' | 'locationDetail' | 'badges' | 'imageKey'>;
+type NewPost = Pick<IPost, 'foodName' | 'type' | 'dietaryTags' | 'location' | 'locationDetail' | 'imageKey'>;
 
 export async function createPost(authorId: string, data: NewPost) {
     const now = new Date();

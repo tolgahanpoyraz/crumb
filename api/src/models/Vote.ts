@@ -1,5 +1,5 @@
 import { Schema, model, Types, type Model } from 'mongoose';
-import { type VoteType } from './Post.js';
+import { VOTE_TYPES, type VoteType } from './Post.js';
 
 export interface IVote {
     post: Types.ObjectId;
@@ -14,7 +14,7 @@ const voteSchema = new Schema<IVote, VoteModel>(
     {
         post: { type: Schema.Types.ObjectId, ref: 'Post', required: true },
         user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        type: { type: String, enum: ['present', 'gone'], required: true },
+        type: { type: String, enum: [...VOTE_TYPES], required: true },
         expiresAt: { type: Date, required: true },
     },
     { timestamps: true },
