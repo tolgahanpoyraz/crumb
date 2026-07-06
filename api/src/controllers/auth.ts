@@ -13,7 +13,7 @@ function signToken(userId: unknown): string {
 export async function registerUser(req: Request, res: Response): Promise<void> {
     const { displayName, email, password } = req.body as RegisterInput;
 
-    await authService.register(displayName, email, password);
+    await authService.register({ displayName, email, password });
     res.status(201).json({ message: 'Registered. Check your email to verify your account' });
 }
 

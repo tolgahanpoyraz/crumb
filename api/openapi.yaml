@@ -511,17 +511,15 @@ components:
 
     User:
       type: object
-      required: [id, firstName, lastName, email]
+      required: [id, displayName, email]
       properties:
         id:
           type: string
           example: 665f1c2e9b1e8a0012a3b4c5
-        firstName:
+        displayName:
           type: string
-          example: Jane
-        lastName:
-          type: string
-          example: Doe
+          description: The name shown for the user, e.g. in greetings and on posts.
+          example: Maya
         email:
           type: string
           format: email
@@ -532,18 +530,14 @@ components:
 
     RegisterRequest:
       type: object
-      required: [firstName, lastName, email, password]
+      required: [displayName, email, password]
       properties:
-        firstName:
+        displayName:
           type: string
           minLength: 1
           maxLength: 100
-          example: Jane
-        lastName:
-          type: string
-          minLength: 1
-          maxLength: 100
-          example: Doe
+          description: The name shown for the user, e.g. in greetings and on posts.
+          example: Maya
         email:
           type: string
           format: email

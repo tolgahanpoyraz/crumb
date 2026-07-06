@@ -16,15 +16,10 @@ const mockedResetEmail = vi.mocked(sendPasswordResetEmail);
 const EMAIL = 'user@example.com';
 const PASSWORD = 'hunter2pw';
 const NEW_PASSWORD = 'newpass123';
-const FIRST_NAME = 'Test';
-const LAST_NAME = 'User';
+const DISPLAY_NAME = 'Testy';
 
-function register(email = EMAIL, password = PASSWORD) {
-    return request(app).post('/api/auth/register').send({
-        displayName: 'Test User',
-        email,
-        password,
-    });
+function register(email = EMAIL, password = PASSWORD, displayName = DISPLAY_NAME) {
+    return request(app).post('/api/auth/register').send({ displayName, email, password });
 }
 
 function login(email = EMAIL, password = PASSWORD) {
@@ -62,7 +57,7 @@ describe('POST /api/auth/register', () => {
         expect(res.status).toBe(201);
         const user = await User.findOne({ email: EMAIL });
         expect(user?.verified).toBe(false);
-        expect(user?.displayName).toBe('Test User');
+        expect(user?.displayName).toBe(DISPLAY_NAME);
         expect(mockedVerifyEmail).toHaveBeenCalledOnce();
         expect(mockedVerifyEmail.mock.calls[0][0]).toBe(EMAIL);
     });
@@ -108,7 +103,7 @@ describe('POST /api/auth/login', () => {
         expect(res.body.token).toBeTruthy();
         expect(res.body.user).toMatchObject({
             email: EMAIL,
-            displayName: 'Test User',
+            displayName: DISPLAY_NAME,
         });
     });
 
@@ -248,7 +243,7 @@ describe('GET /api/auth/me', () => {
         expect(res.body.user).toMatchObject({
             email: EMAIL,
             verified: true,
-            displayName: 'Test User',
+            displayName: DISPLAY_NAME,
         });
     });
 
