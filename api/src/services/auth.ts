@@ -36,13 +36,15 @@ async function issuePasswordResetToken(user: HydratedDocument<IUser>): Promise<v
     }
 }
 
-export async function register(firstName: string, lastName: string, email: string, password: string) {
-    const existing = await User.findOne({ email });
+type RegisterData = Pick<IUser, 'displayName' | 'email' | 'password'>;
+
+export async function register(data: RegisterData) {
+    const existing = await User.findOne({ email: data.email });
     if (existing) {
         throw new AppError(409, 'Email already in use');
     }
 
-    const user = await User.create({ firstName, lastName, email, password })
+    const user = await User.create(data);
 
     await issueVerificationToken(user);
     return user;

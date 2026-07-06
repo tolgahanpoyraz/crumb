@@ -7,8 +7,7 @@ const email = z.string().trim().toLowerCase().pipe(z.email('Invalid email addres
 const password = z.string().min(8, 'Password must be at least 8 characters').max(200);
 
 export const registerSchema = z.object({
-    firstName: name,
-    lastName: name,
+    displayName: name,
     email,
     password,
 });
