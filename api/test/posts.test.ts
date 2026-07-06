@@ -22,11 +22,18 @@ let userCount = 0;
 async function authUser(): Promise<string> {
     const email = `user${userCount++}@example.com`;
     const password = 'hunter2pw';
-    await request(app).post('/api/auth/register').send({ email, password });
+    const firstName = 'Test';
+    const lastName = 'User';
+
+    await request(app).post('/api/auth/register').send({ firstName, lastName, email, password });
+
     const { calls } = mockedVerifyEmail.mock;
     const token = calls[calls.length - 1][1] as string;
+
     await request(app).get('/api/auth/verify').query({ token });
+
     const res = await request(app).post('/api/auth/login').send({ email, password });
+
     return res.body.token as string;
 }
 

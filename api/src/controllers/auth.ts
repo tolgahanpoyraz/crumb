@@ -11,9 +11,9 @@ function signToken(userId: unknown): string {
 }
 
 export async function registerUser(req: Request, res: Response): Promise<void> {
-    const { email, password } = req.body as RegisterInput;
+    const { firstName, lastName, email, password } = req.body as RegisterInput;
 
-    await authService.register(email, password);
+    await authService.register(firstName, lastName, email, password);
     res.status(201).json({ message: 'Registered. Check your email to verify your account' });
 }
 
@@ -22,7 +22,15 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
 
     const user = await authService.login(email, password);
     const token = signToken(user._id);
-    res.status(200).json({ token, user: { id: user._id, email: user.email } });
+    res.status(200).json({
+        token,
+        user: {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+        },
+    });
 }
 
 export async function verifyEmail(req: Request, res: Response): Promise<void> {
@@ -48,7 +56,15 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
 export async function getMe(req: Request, res: Response): Promise<void> {
     const { id } = req.auth as JwtPayload;
     const user = await authService.getUserById(id);
-    res.status(200).json({ user: { id: user._id, email: user.email, verified: user.verified } });
+    res.status(200).json({
+        user: {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            verified: user.verified,
+        },
+    });
 }
 
 export async function resendVerification(req: Request, res: Response): Promise<void> {

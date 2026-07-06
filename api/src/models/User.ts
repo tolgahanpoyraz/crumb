@@ -2,6 +2,8 @@ import { Schema, model, type Model } from 'mongoose';
 import bcrypt from 'bcrypt';
 
 export interface IUser {
+    firstName: string,
+    lastName: string,
     email: string,
     password: string,
     verified?: boolean,
@@ -21,6 +23,8 @@ type UserModel = Model<IUser, {}, IUserMethods>;
 
 const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     {
+        firstName: { type: String, required: true, trim: true },
+        lastName: { type: String, required: true, trim: true },
         email: { type: String, required: true, unique: true, lowercase: true, trim: true },
         password: { type: String, required: true, select: false },
         verified: { type: Boolean, default: false },
@@ -53,4 +57,3 @@ userSchema.methods.passwordChangedAfter = function (tokenIssuedAtSeconds: number
 };
 
 export const User = model<IUser, UserModel>('User', userSchema);
-

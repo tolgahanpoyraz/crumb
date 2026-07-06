@@ -492,11 +492,17 @@ components:
 
     User:
       type: object
-      required: [id, email]
+      required: [id, firstName, lastName, email]
       properties:
         id:
           type: string
           example: 665f1c2e9b1e8a0012a3b4c5
+        firstName:
+          type: string
+          example: Jane
+        lastName:
+          type: string
+          example: Doe
         email:
           type: string
           format: email
@@ -507,8 +513,18 @@ components:
 
     RegisterRequest:
       type: object
-      required: [email, password]
+      required: [firstName, lastName, email, password]
       properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Jane
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Doe
         email:
           type: string
           format: email
