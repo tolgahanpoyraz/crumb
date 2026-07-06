@@ -17,6 +17,8 @@ import { sendVerificationEmail } from '../src/services/email.js';
 
 const mockedVerifyEmail = vi.mocked(sendVerificationEmail);
 
+const LOCATION = 'student-union';
+
 let userCount = 0;
 
 async function authUser(): Promise<string> {
@@ -45,7 +47,7 @@ function createPost(token: string, body: Record<string, unknown> = {}) {
     return request(app)
         .post('/api/posts')
         .set('Authorization', `Bearer ${token}`)
-        .send({ foodName: 'Bagels', location: 'HEC 101', ...body });
+        .send({ foodName: 'Bagels', location: LOCATION, ...body });
 }
 
 function vote(token: string, postId: string, type: string) {
@@ -57,7 +59,7 @@ function vote(token: string, postId: string, type: string) {
 
 describe('POST /api/posts', () => {
     it('requires authentication', async () => {
-        const res = await request(app).post('/api/posts').send({ foodName: 'Pizza', location: 'HEC 101' });
+        const res = await request(app).post('/api/posts').send({ foodName: 'Pizza', location: LOCATION });
         expect(res.status).toBe(401);
     });
 
@@ -65,7 +67,7 @@ describe('POST /api/posts', () => {
         const token = await authUser();
         const res = await createPost(token, { foodName: 'Pizza', badges: ['pizza'] });
         expect(res.status).toBe(201);
-        expect(res.body.post).toMatchObject({ foodName: 'Pizza', location: 'HEC 101', status: 'fresh' });
+        expect(res.body.post).toMatchObject({ foodName: 'Pizza', location: { id: LOCATION }, status: 'fresh' });
         expect(new Date(res.body.post.expiresAt).getTime()).toBeGreaterThan(Date.now());
     });
 
@@ -92,6 +94,20 @@ describe('POST /api/posts', () => {
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/imageKey/i);
     });
+
+    it('rejects an unknown location with 400', async () => {
+        const token = await authUser();
+        const res = await createPost(token, { location: 'not-a-real-place' });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/location/i);
+    });
+
+    it('stores an optional locationDetail', async () => {
+        const token = await authUser();
+        const res = await createPost(token, { locationDetail: '2nd floor lounge' });
+        expect(res.status).toBe(201);
+        expect(res.body.post.locationDetail).toBe('2nd floor lounge');
+    });
 });
 
 describe('GET /api/posts', () => {
@@ -103,6 +119,18 @@ describe('GET /api/posts', () => {
         expect(res.body.posts).toHaveLength(1);
         expect(res.body.posts[0].status).toBe('fresh');
         expect(res.body.posts[0].confidence).toBeGreaterThan(0.8);
+    });
+
+    it('resolves the location id to name and coordinates', async () => {
+        const token = await authUser();
+        await createPost(token);
+        const res = await request(app).get('/api/posts');
+        expect(res.body.posts[0].location).toMatchObject({
+            id: LOCATION,
+            name: expect.any(String),
+            latitude: expect.any(Number),
+            longitude: expect.any(Number),
+        });
     });
 
     it('excludes expired posts', async () => {

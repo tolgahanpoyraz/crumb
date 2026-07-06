@@ -7,6 +7,7 @@ export type PostStatus = 'fresh' | 'likely' | 'fading' | 'gone';
 export interface IPost {
     foodName: string;
     location: string;
+    locationDetail?: string;
     imageKey?: string;
     badges: string[];
     author: Types.ObjectId;
@@ -23,6 +24,7 @@ const postSchema = new Schema<IPost, PostModel>(
     {
         foodName: { type: String, required: true, trim: true },
         location: { type: String, required: true, trim: true },
+        locationDetail: { type: String, trim: true },
         imageKey: { type: String },
         badges: { type: [String], default: [] },
         author: { type: Schema.Types.ObjectId, ref: 'User', required: true },

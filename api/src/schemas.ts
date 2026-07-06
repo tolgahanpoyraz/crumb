@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LOCATION_IDS } from './locations.js';
 
 const name = z.string().trim().min(1, 'Name is required').max(100);
 const email = z.string().trim().toLowerCase().pipe(z.email('Invalid email address'));
@@ -31,7 +32,8 @@ export const changePasswordSchema = z.object({
 
 export const createPostSchema = z.object({
     foodName: z.string().trim().min(1, 'foodName is required').max(100),
-    location: z.string().trim().min(1, 'location is required').max(100),
+    location: z.enum(LOCATION_IDS, { message: 'Invalid location' }),
+    locationDetail: z.string().trim().max(256).optional(),
     badges: z.array(z.string().trim().min(1).max(30)).max(10).optional().default([]),
     imageKey: z.string().regex(/^posts\/[a-f0-9-]+\.jpg$/, 'Invalid imageKey').optional(),
 });

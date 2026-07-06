@@ -20,6 +20,8 @@ tags:
     description: Registration, login, verification, and password management
   - name: Posts
     description: Food posts feed, voting, and image uploads
+  - name: Locations
+    description: Campus locations users pick from when posting
 
 paths:
   /health:
@@ -428,6 +430,23 @@ paths:
               example:
                 error: You have already voted on this post
 
+  /locations:
+    get:
+      tags: [Locations]
+      summary: List campus locations
+      description: >
+        Returns the fixed set of campus locations users choose from when posting.
+        Use each entry's `id` as the `location` when creating a post. Public; no auth.
+      operationId: getLocations
+      security: []
+      responses:
+        '200':
+          description: The campus location list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationsResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -639,8 +658,15 @@ components:
           type: string
           example: Leftover Domino's
         location:
+          allOf:
+            - $ref: '#/components/schemas/CampusLocation'
+          description: >
+            The campus location, resolved from the stored id to its full record
+            (name + coordinates) on read.
+        locationDetail:
           type: string
-          example: HEC 101
+          description: Optional free-text spot within the location, e.g. a room or floor.
+          example: 2nd floor lounge
         imageKey:
           type: string
           description: S3 object key; the client builds the display URL from this.
@@ -687,7 +713,15 @@ components:
           example: Leftover Domino's
         location:
           type: string
-          example: HEC 101
+          description: >
+            Id of a campus location from GET /locations. Must match a known id;
+            arbitrary strings are rejected with 400.
+          example: student-union
+        locationDetail:
+          type: string
+          maxLength: 256
+          description: Optional free-text spot within the location, e.g. a room or floor.
+          example: 2nd floor lounge
         badges:
           type: array
           items:
@@ -712,6 +746,35 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Post'
+
+    CampusLocation:
+      type: object
+      required: [id, name, latitude, longitude]
+      properties:
+        id:
+          type: string
+          description: Stable slug id; the value stored on a post and sent when creating one.
+          example: student-union
+        name:
+          type: string
+          example: Student Union
+        latitude:
+          type: number
+          format: double
+          example: 28.6019
+        longitude:
+          type: number
+          format: double
+          example: -81.2005
+
+    LocationsResponse:
+      type: object
+      required: [locations]
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampusLocation'
 
     VoteRequest:
       type: object
