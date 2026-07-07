@@ -11,9 +11,9 @@ function signToken(userId: unknown): string {
 }
 
 export async function registerUser(req: Request, res: Response): Promise<void> {
-    const { firstName, lastName, email, password } = req.body as RegisterInput;
+    const { displayName, email, password } = req.body as RegisterInput;
 
-    await authService.register(firstName, lastName, email, password);
+    await authService.register(displayName, email, password);
     res.status(201).json({ message: 'Registered. Check your email to verify your account' });
 }
 
@@ -26,8 +26,7 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
         token,
         user: {
             id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            displayName: user.displayName,
             email: user.email,
         },
     });
@@ -59,8 +58,7 @@ export async function getMe(req: Request, res: Response): Promise<void> {
     res.status(200).json({
         user: {
             id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            displayName: user.displayName,
             email: user.email,
             verified: user.verified,
         },
