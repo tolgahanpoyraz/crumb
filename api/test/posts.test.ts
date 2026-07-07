@@ -24,8 +24,7 @@ async function authUser(): Promise<string> {
     const password = 'hunter2pw';
 
     await request(app).post('/api/auth/register').send({
-        firstName: 'Test',
-        lastName: 'User',
+        displayName: 'Test User',
         email,
         password,
     });
