@@ -63,26 +63,33 @@ class AuthSession extends ChangeNotifier {
   }
 
   Future<String> register({
-    required String firstName,
-    required String lastName,
-    required String email,
-    required String password,
-  }) async {
-    _setLoading(true);
+  required String firstName,
+  required String lastName,
+  required String email,
+  required String password,
+}) async {
+  _setLoading(true);
+
+  try {
+    final data = await _authApi.register(
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      password: password,
+    );
 
     try {
-      final data = await _authApi.register(
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        password: password,
-      );
-
-      return data['message']?.toString() ?? 'Account created.';
-    } finally {
-      _setLoading(false);
+      await _authApi.resendVerification(email: email);
+    } catch (_) {
+      return data['message']?.toString() ??
+          'Account created, but we could not send the verification email.';
     }
+
+    return 'Account created. Check your email to verify your account.';
+  } finally {
+    _setLoading(false);
   }
+}
 
   Future<String> resendVerification({
     required String email,
