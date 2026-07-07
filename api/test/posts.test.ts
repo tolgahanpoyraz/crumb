@@ -10,7 +10,7 @@ vi.mock('../src/services/uploads.js', () => ({
     createUploadUrl: vi.fn().mockResolvedValue({ url: 'https://signed.example/put', key: 'posts/abc.jpg' }),
 }));
 
-import app from '../src/app.js';
+import { server } from './server.js';
 import { Post } from '../src/models/Post.js';
 import { Vote } from '../src/models/Vote.js';
 import { sendVerificationEmail } from '../src/services/email.js';
@@ -26,41 +26,44 @@ async function authUser(): Promise<string> {
     const password = 'hunter2pw';
     const displayName = 'Testy';
 
-    await request(app).post('/api/auth/register').send({ displayName, email, password });
+    await request(server).post('/api/auth/register').send({ displayName, email, password });
 
     const { calls } = mockedVerifyEmail.mock;
     const token = calls[calls.length - 1][1] as string;
 
-    await request(app).get('/api/auth/verify').query({ token });
+    await request(server).get('/api/auth/verify').query({ token });
 
-    const res = await request(app).post('/api/auth/login').send({ email, password });
+    const res = await request(server).post('/api/auth/login').send({ email, password });
+    if (res.status !== 200) {
+        throw new Error(`authUser login failed: ${res.status} ${JSON.stringify(res.body)}`);
+    }
 
     return res.body.token as string;
 }
 
 function createPost(token: string, body: Record<string, unknown> = {}) {
-    return request(app)
+    return request(server)
         .post('/api/posts')
         .set('Authorization', `Bearer ${token}`)
         .send({ foodName: 'Bagels', type: 'snacks', location: LOCATION, ...body });
 }
 
 function vote(token: string, postId: string, type: string) {
-    return request(app)
+    return request(server)
         .post(`/api/posts/${postId}/vote`)
         .set('Authorization', `Bearer ${token}`)
         .send({ type });
 }
 
 function deletePost(token: string, postId: string) {
-    return request(app)
+    return request(server)
         .delete(`/api/posts/${postId}`)
         .set('Authorization', `Bearer ${token}`);
 }
 
 describe('POST /api/posts', () => {
     it('requires authentication', async () => {
-        const res = await request(app).post('/api/posts').send({ foodName: 'Pizza', location: LOCATION });
+        const res = await request(server).post('/api/posts').send({ foodName: 'Pizza', location: LOCATION });
         expect(res.status).toBe(401);
     });
 
@@ -80,7 +83,7 @@ describe('POST /api/posts', () => {
 
     it('returns 400 when a required field is missing', async () => {
         const token = await authUser();
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/posts')
             .set('Authorization', `Bearer ${token}`)
             .send({ foodName: 'Pizza' });
@@ -118,7 +121,7 @@ describe('POST /api/posts', () => {
 
     it('requires a type', async () => {
         const token = await authUser();
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/posts')
             .set('Authorization', `Bearer ${token}`)
             .send({ foodName: 'Pizza', location: LOCATION });
@@ -152,7 +155,7 @@ describe('GET /api/posts', () => {
     it('lists live posts with a computed confidence and status', async () => {
         const token = await authUser();
         await createPost(token);
-        const res = await request(app).get('/api/posts');
+        const res = await request(server).get('/api/posts');
         expect(res.status).toBe(200);
         expect(res.body.posts).toHaveLength(1);
         expect(res.body.posts[0].status).toBe('fresh');
@@ -162,7 +165,7 @@ describe('GET /api/posts', () => {
     it('resolves the location id to name and coordinates', async () => {
         const token = await authUser();
         await createPost(token);
-        const res = await request(app).get('/api/posts');
+        const res = await request(server).get('/api/posts');
         expect(res.body.posts[0].location).toMatchObject({
             id: LOCATION,
             name: expect.any(String),
@@ -175,7 +178,7 @@ describe('GET /api/posts', () => {
         const token = await authUser();
         const { body } = await createPost(token);
         await Post.updateOne({ _id: body.post._id }, { expiresAt: new Date(Date.now() - 1000) });
-        const res = await request(app).get('/api/posts');
+        const res = await request(server).get('/api/posts');
         expect(res.body.posts).toHaveLength(0);
     });
 
@@ -185,7 +188,7 @@ describe('GET /api/posts', () => {
         const b = await createPost(token, { foodName: 'Later' });
         await Post.updateOne({ _id: a.body.post._id }, { expiresAt: new Date(Date.now() + 10 * 60000) });
         await Post.updateOne({ _id: b.body.post._id }, { expiresAt: new Date(Date.now() + 60 * 60000) });
-        const res = await request(app).get('/api/posts');
+        const res = await request(server).get('/api/posts');
         expect(res.body.posts.map((p: { foodName: string }) => p.foodName)).toEqual(['Later', 'Soon']);
     });
 });
@@ -194,7 +197,7 @@ describe('POST /api/posts/:id/vote', () => {
     it('requires authentication', async () => {
         const token = await authUser();
         const { body } = await createPost(token);
-        const res = await request(app).post(`/api/posts/${body.post._id}/vote`).send({ type: 'present' });
+        const res = await request(server).post(`/api/posts/${body.post._id}/vote`).send({ type: 'present' });
         expect(res.status).toBe(401);
     });
 
@@ -259,20 +262,20 @@ describe('POST /api/posts/:id/vote', () => {
         const res = await vote(u2, body.post._id, 'gone');
         expect(res.body.status).toBe('gone');
 
-        const feed = await request(app).get('/api/posts');
+        const feed = await request(server).get('/api/posts');
         expect(feed.body.posts).toHaveLength(0);
     });
 });
 
 describe('GET /api/posts/upload-url', () => {
     it('requires authentication', async () => {
-        const res = await request(app).get('/api/posts/upload-url');
+        const res = await request(server).get('/api/posts/upload-url');
         expect(res.status).toBe(401);
     });
 
     it('returns a signed url and key for an authed user', async () => {
         const token = await authUser();
-        const res = await request(app).get('/api/posts/upload-url').set('Authorization', `Bearer ${token}`);
+        const res = await request(server).get('/api/posts/upload-url').set('Authorization', `Bearer ${token}`);
         expect(res.status).toBe(200);
         expect(res.body).toEqual({ url: 'https://signed.example/put', key: 'posts/abc.jpg' });
     });
@@ -280,7 +283,7 @@ describe('GET /api/posts/upload-url', () => {
 
 describe('DELETE /api/posts/:id', () => {
     it('requires authentication', async () => {
-        const res = await request(app).delete('/api/posts/0123456789abcdef01234567');
+        const res = await request(server).delete('/api/posts/0123456789abcdef01234567');
         expect(res.status).toBe(401);
     });
 
@@ -290,7 +293,7 @@ describe('DELETE /api/posts/:id', () => {
         const res = await deletePost(token, body.post._id);
         expect(res.status).toBe(204);
 
-        const feed = await request(app).get('/api/posts');
+        const feed = await request(server).get('/api/posts');
         expect(feed.body.posts).toHaveLength(0);
         expect(await Post.countDocuments({ _id: body.post._id })).toBe(0);
     });
