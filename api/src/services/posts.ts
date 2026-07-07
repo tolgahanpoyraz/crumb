@@ -22,6 +22,21 @@ export async function listFeed() {
     });
 }
 
+export async function deletePost(postId: string, userId: string) {
+    const post = await Post.findById(postId);
+
+    if (!post) {
+        throw new AppError(404, 'Post not found');
+    }
+
+    if (post.author.toString() !== userId) {
+        throw new AppError(403, 'You can only delete your own posts');
+    }
+
+    await post.deleteOne();
+    await Vote.deleteMany({ post: postId });
+}
+
 export async function vote(postId: string, userId: string, type: VoteType) {
     const now = new Date();
     const post = await Post.findById(postId);

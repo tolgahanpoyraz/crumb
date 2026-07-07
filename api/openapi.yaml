@@ -473,6 +473,45 @@ paths:
               example:
                 error: You have already voted on this post
 
+  /posts/{id}:
+    delete:
+      tags: [Posts]
+      summary: Delete a post
+      description: >
+        Deletes a post and its votes. Only the post's author may delete it; the
+        image is left to expire under the S3 lifecycle rule.
+      operationId: deletePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The post's id
+      responses:
+        '204':
+          description: Post deleted (no content)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The post belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: You can only delete your own posts
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Post not found
+
   /locations:
     get:
       tags: [Locations]

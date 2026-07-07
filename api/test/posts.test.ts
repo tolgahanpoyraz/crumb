@@ -52,6 +52,12 @@ function vote(token: string, postId: string, type: string) {
         .send({ type });
 }
 
+function deletePost(token: string, postId: string) {
+    return request(app)
+        .delete(`/api/posts/${postId}`)
+        .set('Authorization', `Bearer ${token}`);
+}
+
 describe('POST /api/posts', () => {
     it('requires authentication', async () => {
         const res = await request(app).post('/api/posts').send({ foodName: 'Pizza', location: LOCATION });
@@ -269,5 +275,49 @@ describe('GET /api/posts/upload-url', () => {
         const res = await request(app).get('/api/posts/upload-url').set('Authorization', `Bearer ${token}`);
         expect(res.status).toBe(200);
         expect(res.body).toEqual({ url: 'https://signed.example/put', key: 'posts/abc.jpg' });
+    });
+});
+
+describe('DELETE /api/posts/:id', () => {
+    it('requires authentication', async () => {
+        const res = await request(app).delete('/api/posts/0123456789abcdef01234567');
+        expect(res.status).toBe(401);
+    });
+
+    it('lets the author delete their own post', async () => {
+        const token = await authUser();
+        const { body } = await createPost(token);
+        const res = await deletePost(token, body.post._id);
+        expect(res.status).toBe(204);
+
+        const feed = await request(app).get('/api/posts');
+        expect(feed.body.posts).toHaveLength(0);
+        expect(await Post.countDocuments({ _id: body.post._id })).toBe(0);
+    });
+
+    it("also removes the post's votes", async () => {
+        const author = await authUser();
+        const voter = await authUser();
+        const { body } = await createPost(author);
+        await vote(voter, body.post._id, 'present').expect(200);
+        expect(await Vote.countDocuments({ post: body.post._id })).toBe(1);
+
+        await deletePost(author, body.post._id).expect(204);
+        expect(await Vote.countDocuments({ post: body.post._id })).toBe(0);
+    });
+
+    it("returns 403 when deleting another user's post", async () => {
+        const author = await authUser();
+        const other = await authUser();
+        const { body } = await createPost(author);
+        const res = await deletePost(other, body.post._id);
+        expect(res.status).toBe(403);
+        expect(await Post.countDocuments({ _id: body.post._id })).toBe(1);
+    });
+
+    it('returns 404 for a nonexistent post', async () => {
+        const token = await authUser();
+        const res = await deletePost(token, '0123456789abcdef01234567');
+        expect(res.status).toBe(404);
     });
 });
