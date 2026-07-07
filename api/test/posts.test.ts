@@ -22,6 +22,8 @@ let userCount = 0;
 async function authUser(): Promise<string> {
     const email = `user${userCount++}@example.com`;
     const password = 'hunter2pw';
+    const firstName = 'Test';
+    const lastName = 'User';
 
     await request(app).post('/api/auth/register').send({
         displayName: 'Test User',

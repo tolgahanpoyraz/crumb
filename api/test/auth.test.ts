@@ -16,6 +16,8 @@ const mockedResetEmail = vi.mocked(sendPasswordResetEmail);
 const EMAIL = 'user@example.com';
 const PASSWORD = 'hunter2pw';
 const NEW_PASSWORD = 'newpass123';
+const FIRST_NAME = 'Test';
+const LAST_NAME = 'User';
 
 function register(email = EMAIL, password = PASSWORD) {
     return request(app).post('/api/auth/register').send({
