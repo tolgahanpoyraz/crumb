@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'app_shell.dart';
+import 'app_root.dart';
 
 void main() {
   runApp(const CampusFoodApp());
@@ -20,7 +20,7 @@ class CampusFoodApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const AppShell(),
+      home: const AppRoot(),
     );
   }
 }

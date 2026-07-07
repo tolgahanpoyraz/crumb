@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../../api/posts_api.dart';
 import '../../models/food_post.dart';
+import '../auth/auth_session.dart';
 import 'post_card.dart';
 
 class FeedPage extends StatefulWidget {
-  const FeedPage({super.key});
+  const FeedPage({
+    super.key,
+    required this.authSession,
+    required this.onRequireLogin,
+    required this.onCreatePost,
+  });
+
+  final AuthSession authSession;
+  final VoidCallback onRequireLogin;
+  final VoidCallback onCreatePost;
 
   @override
   State<FeedPage> createState() => _FeedPageState();
@@ -100,11 +110,12 @@ class _FeedPageState extends State<FeedPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Create post screen comes next.'),
-            ),
-          );
+          if (!widget.authSession.isLoggedIn) {
+            widget.onRequireLogin();
+            return;
+          }
+
+          widget.onCreatePost();
         },
         icon: const Icon(Icons.add),
         label: const Text('Post food'),
