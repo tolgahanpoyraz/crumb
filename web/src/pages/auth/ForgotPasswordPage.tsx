@@ -4,21 +4,36 @@ import { BrandPanel } from './BrandPanel';
 import { Field } from '../../components/Field';
 import { Icon } from '../../components/Icon';
 import { forgotPassword } from '../../api/auth';
+import { isValidEmail } from '../../lib/validation';
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
+    setError(null);
+
+    const value = email.trim();
+    // Catch malformed addresses before submitting — otherwise we'd advance to
+    // check-email with a value the API rejects, and resend would 400 there.
+    if (!isValidEmail(value)) {
+      setError('Enter a valid email address.');
+      return;
+    }
+
     setBusy(true);
     try {
-      // Always 200 — the API won't leak whether the address exists.
-      await forgotPassword(email.trim());
+      // Resolves 200 whether or not the account exists (no enumeration).
+      await forgotPassword(value);
+      navigate('/check-email', { state: { email: value } });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
-      navigate('/check-email', { state: { email: email.trim() } });
+      setBusy(false);
     }
   }
 
@@ -50,7 +65,7 @@ export function ForgotPasswordPage() {
           <div className="field-label" style={{ marginTop: 26 }}>
             School email
           </div>
-          <Field icon="mail">
+          <Field icon="mail" error={!!error}>
             <input
               type="email"
               autoComplete="email"
@@ -60,6 +75,13 @@ export function ForgotPasswordPage() {
               required
             />
           </Field>
+
+          {error && (
+            <div className="form-error">
+              <Icon name="info" size={16} strokeWidth={2} />
+              {error}
+            </div>
+          )}
 
           <button className="btn btn-primary btn-lg btn-block" style={{ marginTop: 22 }} disabled={busy}>
             {busy ? <span className="spinner" /> : 'Send reset link'}
