@@ -36,13 +36,15 @@ async function issuePasswordResetToken(user: HydratedDocument<IUser>): Promise<v
     }
 }
 
-export async function register(displayName: string, email: string, password: string) {
-    const existing = await User.findOne({ email });
+type RegisterData = Pick<IUser, 'displayName' | 'email' | 'password'>;
+
+export async function register(data: RegisterData) {
+    const existing = await User.findOne({ email: data.email });
     if (existing) {
         throw new AppError(409, 'Email already in use');
     }
 
-    const user = await User.create({ displayName, email, password })
+    const user = await User.create(data);
 
     await issueVerificationToken(user);
     return user;
@@ -125,6 +127,18 @@ export async function changePassword(userId: string, currentPassword: string, ne
 
 export async function getUserById(id: string) {
     const user = await User.findById(id);
+    if (!user) {
+        throw new AppError(404, 'User not found');
+    }
+    return user;
+}
+
+export async function setAvatar(userId: string) {
+    const user = await User.findByIdAndUpdate(
+        userId,
+        { avatarKey: `avatars/${userId}.jpg` },
+        { returnDocument: 'after' },
+    );
     if (!user) {
         throw new AppError(404, 'User not found');
     }

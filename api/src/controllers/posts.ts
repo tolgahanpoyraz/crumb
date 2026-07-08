@@ -6,9 +6,9 @@ import { type CreatePostInput, type VoteInput } from '../schemas.js';
 
 export async function createPost(req: Request, res: Response): Promise<void> {
     const { id } = req.auth as JwtPayload;
-    const { foodName, location, badges, imageKey } = req.body as CreatePostInput;
+    const { foodName, type, dietaryTags, location, locationDetail, imageKey } = req.body as CreatePostInput;
 
-    const post = await postService.createPost(id, { foodName, location, badges, imageKey });
+    const post = await postService.createPost(id, { foodName, type, dietaryTags, location, locationDetail, imageKey });
     res.status(201).json({ post });
 }
 
@@ -29,4 +29,12 @@ export async function votePost(req: Request, res: Response): Promise<void> {
 
     const result = await postService.vote(postId, userId, type);
     res.status(200).json(result);
+}
+
+export async function deletePost(req: Request, res: Response): Promise<void> {
+    const { id: userId } = req.auth as JwtPayload;
+    const { id: postId } = req.params as { id: string };
+
+    await postService.deletePost(postId, userId);
+    res.status(204).send();
 }

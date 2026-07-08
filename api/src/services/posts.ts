@@ -1,13 +1,15 @@
 import { Post, type IPost, type VoteType } from '../models/Post.js';
 import { Vote } from '../models/Vote.js';
 import { applyVote, decayE, sigmoid, statusFromConfidence, expiryFromE, E_INITIAL } from '../confidence.js';
+import { resolveLocation } from '../locations.js';
 import { AppError } from '../errors.js';
 
-type NewPost = Pick<IPost, 'foodName' | 'location' | 'badges' | 'imageKey'>;
+type NewPost = Pick<IPost, 'foodName' | 'type' | 'dietaryTags' | 'location' | 'locationDetail' | 'imageKey'>;
 
 export async function createPost(authorId: string, data: NewPost) {
     const now = new Date();
-    return Post.create({ ...data, author: authorId, lastUpdate: now, expiresAt: expiryFromE(E_INITIAL, now) });
+    const post = await Post.create({ ...data, author: authorId, lastUpdate: now, expiresAt: expiryFromE(E_INITIAL, now) });
+    return { ...post.toObject(), location: resolveLocation(post.location) };
 }
 
 export async function listFeed() {
@@ -16,8 +18,23 @@ export async function listFeed() {
     return posts.map((post) => {
         const minutes = (now.getTime() - new Date(post.lastUpdate).getTime()) / 60000;
         const confidence = sigmoid(decayE(post.E, minutes));
-        return { ...post, confidence, status: statusFromConfidence(confidence) };
+        return { ...post, location: resolveLocation(post.location), confidence, status: statusFromConfidence(confidence) };
     });
+}
+
+export async function deletePost(postId: string, userId: string) {
+    const post = await Post.findById(postId);
+
+    if (!post) {
+        throw new AppError(404, 'Post not found');
+    }
+
+    if (post.author.toString() !== userId) {
+        throw new AppError(403, 'You can only delete your own posts');
+    }
+
+    await post.deleteOne();
+    await Vote.deleteMany({ post: postId });
 }
 
 export async function vote(postId: string, userId: string, type: VoteType) {

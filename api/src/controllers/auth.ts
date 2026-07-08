@@ -1,7 +1,10 @@
 import { type Request, type Response } from 'express';
+import { type HydratedDocument } from 'mongoose';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import config from '../config/env.js'
 import * as authService from '../services/auth.js';
+import * as uploadService from '../services/uploads.js';
+import { type IUser } from '../models/User.js';
 import logger from '../config/logger.js';
 import { AppError } from '../errors.js';
 import { type RegisterInput, type LoginInput, type EmailOnlyInput, type ResetPasswordInput, type ChangePasswordInput } from '../schemas.js';
@@ -10,10 +13,19 @@ function signToken(userId: unknown): string {
     return jwt.sign({ id: userId }, config.jwtSecret, { expiresIn: '24h' });
 }
 
+function publicUser(user: HydratedDocument<IUser>) {
+    return {
+        id: user._id,
+        displayName: user.displayName,
+        email: user.email,
+        avatarKey: user.avatarKey,
+    };
+}
+
 export async function registerUser(req: Request, res: Response): Promise<void> {
     const { displayName, email, password } = req.body as RegisterInput;
 
-    await authService.register(displayName, email, password);
+    await authService.register({ displayName, email, password });
     res.status(201).json({ message: 'Registered. Check your email to verify your account' });
 }
 
@@ -22,14 +34,7 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
 
     const user = await authService.login(email, password);
     const token = signToken(user._id);
-    res.status(200).json({
-        token,
-        user: {
-            id: user._id,
-            displayName: user.displayName,
-            email: user.email,
-        },
-    });
+    res.status(200).json({ token, user: publicUser(user) });
 }
 
 export async function verifyEmail(req: Request, res: Response): Promise<void> {
@@ -55,14 +60,19 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
 export async function getMe(req: Request, res: Response): Promise<void> {
     const { id } = req.auth as JwtPayload;
     const user = await authService.getUserById(id);
-    res.status(200).json({
-        user: {
-            id: user._id,
-            displayName: user.displayName,
-            email: user.email,
-            verified: user.verified,
-        },
-    });
+    res.status(200).json({ user: { ...publicUser(user), verified: user.verified } });
+}
+
+export async function getAvatarUploadUrl(req: Request, res: Response): Promise<void> {
+    const { id } = req.auth as JwtPayload;
+    const result = await uploadService.createAvatarUploadUrl(id);
+    res.status(200).json(result);
+}
+
+export async function setAvatar(req: Request, res: Response): Promise<void> {
+    const { id } = req.auth as JwtPayload;
+    const user = await authService.setAvatar(id);
+    res.status(200).json({ user: publicUser(user) });
 }
 
 export async function resendVerification(req: Request, res: Response): Promise<void> {

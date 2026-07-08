@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 export interface IUser {
     displayName: string,
     email: string,
+    avatarKey?: string,
     password: string,
     verified?: boolean,
     verificationToken?: string,
@@ -24,6 +25,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     {
         displayName: { type: String, required: true, trim: true },
         email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+        avatarKey: { type: String },
         password: { type: String, required: true, select: false },
         verified: { type: Boolean, default: false },
         verificationToken: { type: String, select: false },

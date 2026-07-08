@@ -20,6 +20,8 @@ tags:
     description: Registration, login, verification, and password management
   - name: Posts
     description: Food posts feed, voting, and image uploads
+  - name: Locations
+    description: Campus locations users pick from when posting
 
 paths:
   /health:
@@ -299,6 +301,49 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /auth/me/avatar-upload-url:
+    get:
+      tags: [Auth]
+      summary: Get a presigned URL to upload a profile picture
+      description: >
+        Returns a short-lived presigned S3 PUT URL and its key. The client uploads
+        the image (JPEG) directly to S3, then calls POST /auth/me/avatar to save it.
+        The key is deterministic (avatars/{userId}.jpg), so re-uploads overwrite.
+      operationId: getAvatarUploadUrl
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The presigned upload URL and key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Image uploads are not configured on the server
+
+  /auth/me/avatar:
+    post:
+      tags: [Auth]
+      summary: Save the uploaded profile picture
+      description: >
+        Marks the current user as having a profile picture (sets avatarKey). Call
+        this after successfully uploading via the presigned URL. Idempotent.
+      operationId: setAvatar
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /posts:
     get:
       tags: [Posts]
@@ -428,6 +473,62 @@ paths:
               example:
                 error: You have already voted on this post
 
+  /posts/{id}:
+    delete:
+      tags: [Posts]
+      summary: Delete a post
+      description: >
+        Deletes a post and its votes. Only the post's author may delete it; the
+        image is left to expire under the S3 lifecycle rule.
+      operationId: deletePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The post's id
+      responses:
+        '204':
+          description: Post deleted (no content)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The post belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: You can only delete your own posts
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Post not found
+
+  /locations:
+    get:
+      tags: [Locations]
+      summary: List campus locations
+      description: >
+        Returns the fixed set of campus locations users choose from when posting.
+        Use each entry's `id` as the `location` when creating a post. Public; no auth.
+      operationId: getLocations
+      security: []
+      responses:
+        '200':
+          description: The campus location list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationsResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -492,39 +593,39 @@ components:
 
     User:
       type: object
-      required: [id, firstName, lastName, email]
+      required: [id, displayName, email]
       properties:
         id:
           type: string
           example: 665f1c2e9b1e8a0012a3b4c5
-        firstName:
+        displayName:
           type: string
-          example: Jane
-        lastName:
-          type: string
-          example: Doe
+          description: The name shown for the user, e.g. in greetings and on posts.
+          example: Maya
         email:
           type: string
           format: email
           example: user@example.com
+        avatarKey:
+          type: string
+          description: >
+            S3 object key for the profile picture, or absent if none uploaded.
+            When absent, clients render a generated initials avatar.
+          example: avatars/665f1c2e9b1e8a0012a3b4c5.jpg
         verified:
           type: boolean
           example: true
 
     RegisterRequest:
       type: object
-      required: [firstName, lastName, email, password]
+      required: [displayName, email, password]
       properties:
-        firstName:
+        displayName:
           type: string
           minLength: 1
           maxLength: 100
-          example: Jane
-        lastName:
-          type: string
-          minLength: 1
-          maxLength: 100
-          example: Doe
+          description: The name shown for the user, e.g. in greetings and on posts.
+          example: Maya
         email:
           type: string
           format: email
@@ -611,6 +712,16 @@ components:
       enum: [fresh, likely, fading, gone]
       description: Confidence band. Posts at "gone" are excluded from the feed.
 
+    PostType:
+      type: string
+      enum: [pizza, meal, snacks, baked-goods, drinks, other]
+      description: What kind of food the post is; exactly one, required.
+      example: pizza
+
+    DietaryTag:
+      type: string
+      enum: [vegetarian, vegan, halal, kosher, gluten-free]
+
     Tallies:
       type: object
       required: [present, gone]
@@ -624,7 +735,7 @@ components:
 
     Post:
       type: object
-      required: [_id, foodName, location, badges, author, status, tallies, expiresAt, createdAt, updatedAt]
+      required: [_id, foodName, type, dietaryTags, location, author, status, tallies, expiresAt, createdAt, updatedAt]
       description: >
         A food post. Internal fields (e.g. the raw log-odds `E` and `lastUpdate`)
         may also appear in responses but are not part of the stable contract.
@@ -638,18 +749,27 @@ components:
         foodName:
           type: string
           example: Leftover Domino's
+        type:
+          $ref: '#/components/schemas/PostType'
+        dietaryTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/DietaryTag'
+          example: [vegetarian, halal]
         location:
+          allOf:
+            - $ref: '#/components/schemas/CampusLocation'
+          description: >
+            The campus location, resolved from the stored id to its full record
+            (name + coordinates) on read.
+        locationDetail:
           type: string
-          example: HEC 101
+          description: Optional free-text spot within the location, e.g. a room or floor.
+          example: 2nd floor lounge
         imageKey:
           type: string
           description: S3 object key; the client builds the display URL from this.
           example: posts/9661e87f-3b2c-4199-a797-4d91e7306955.jpg
-        badges:
-          type: array
-          items:
-            type: string
-          example: [pizza, free]
         author:
           type: string
           description: Id of the user who posted it
@@ -680,19 +800,30 @@ components:
 
     CreatePostRequest:
       type: object
-      required: [foodName, location]
+      required: [foodName, type, location]
       properties:
         foodName:
           type: string
           example: Leftover Domino's
-        location:
-          type: string
-          example: HEC 101
-        badges:
+        type:
+          $ref: '#/components/schemas/PostType'
+        dietaryTags:
           type: array
           items:
-            type: string
-          example: [pizza, free]
+            $ref: '#/components/schemas/DietaryTag'
+          description: Optional; defaults to an empty array. Unknown values are rejected with 400.
+          example: [vegetarian, halal]
+        location:
+          type: string
+          description: >
+            Id of a campus location from GET /locations. Must match a known id;
+            arbitrary strings are rejected with 400.
+          example: student-union
+        locationDetail:
+          type: string
+          maxLength: 256
+          description: Optional free-text spot within the location, e.g. a room or floor.
+          example: 2nd floor lounge
         imageKey:
           type: string
           description: Key from /posts/upload-url, if an image was uploaded.
@@ -712,6 +843,35 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Post'
+
+    CampusLocation:
+      type: object
+      required: [id, name, latitude, longitude]
+      properties:
+        id:
+          type: string
+          description: Stable slug id; the value stored on a post and sent when creating one.
+          example: student-union
+        name:
+          type: string
+          example: Student Union
+        latitude:
+          type: number
+          format: double
+          example: 28.6019
+        longitude:
+          type: number
+          format: double
+          example: -81.2005
+
+    LocationsResponse:
+      type: object
+      required: [locations]
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampusLocation'
 
     VoteRequest:
       type: object

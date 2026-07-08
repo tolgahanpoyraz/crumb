@@ -6,7 +6,11 @@ vi.mock('../src/services/email.js', () => ({
     sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
-import app from '../src/app.js';
+vi.mock('../src/services/uploads.js', () => ({
+    createAvatarUploadUrl: vi.fn().mockResolvedValue({ url: 'https://signed.example/put', key: 'avatars/abc.jpg' }),
+}));
+
+import { server } from './server.js';
 import { User } from '../src/models/User.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../src/services/email.js';
 
@@ -16,19 +20,14 @@ const mockedResetEmail = vi.mocked(sendPasswordResetEmail);
 const EMAIL = 'user@example.com';
 const PASSWORD = 'hunter2pw';
 const NEW_PASSWORD = 'newpass123';
-const FIRST_NAME = 'Test';
-const LAST_NAME = 'User';
+const DISPLAY_NAME = 'Testy';
 
-function register(email = EMAIL, password = PASSWORD) {
-    return request(app).post('/api/auth/register').send({
-        displayName: 'Test User',
-        email,
-        password,
-    });
+function register(email = EMAIL, password = PASSWORD, displayName = DISPLAY_NAME) {
+    return request(server).post('/api/auth/register').send({ displayName, email, password });
 }
 
 function login(email = EMAIL, password = PASSWORD) {
-    return request(app).post('/api/auth/login').send({ email, password });
+    return request(server).post('/api/auth/login').send({ email, password });
 }
 
 function lastTokenFrom(mock: typeof mockedVerifyEmail): string {
@@ -38,7 +37,7 @@ function lastTokenFrom(mock: typeof mockedVerifyEmail): string {
 
 async function registerAndVerify(email = EMAIL, password = PASSWORD) {
     await register(email, password);
-    await request(app).get('/api/auth/verify').query({ token: lastTokenFrom(mockedVerifyEmail) });
+    await request(server).get('/api/auth/verify').query({ token: lastTokenFrom(mockedVerifyEmail) });
 }
 
 async function registerVerifyLogin(email = EMAIL, password = PASSWORD) {
@@ -49,7 +48,7 @@ async function registerVerifyLogin(email = EMAIL, password = PASSWORD) {
 
 describe('GET /api/health', () => {
     it('reports ok', async () => {
-        const res = await request(app).get('/api/health');
+        const res = await request(server).get('/api/health');
         expect(res.status).toBe(200);
         expect(res.body.status).toBe('ok');
         expect(typeof res.body.uptime).toBe('number');
@@ -62,7 +61,7 @@ describe('POST /api/auth/register', () => {
         expect(res.status).toBe(201);
         const user = await User.findOne({ email: EMAIL });
         expect(user?.verified).toBe(false);
-        expect(user?.displayName).toBe('Test User');
+        expect(user?.displayName).toBe(DISPLAY_NAME);
         expect(mockedVerifyEmail).toHaveBeenCalledOnce();
         expect(mockedVerifyEmail.mock.calls[0][0]).toBe(EMAIL);
     });
@@ -75,7 +74,7 @@ describe('POST /api/auth/register', () => {
     });
 
     it('returns 400 when a field is missing', async () => {
-        const res = await request(app).post('/api/auth/register').send({ email: EMAIL });
+        const res = await request(server).post('/api/auth/register').send({ email: EMAIL });
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/password|displayName/i);
     });
@@ -108,7 +107,7 @@ describe('POST /api/auth/login', () => {
         expect(res.body.token).toBeTruthy();
         expect(res.body.user).toMatchObject({
             email: EMAIL,
-            displayName: 'Test User',
+            displayName: DISPLAY_NAME,
         });
     });
 
@@ -127,22 +126,22 @@ describe('POST /api/auth/login', () => {
 describe('GET /api/auth/verify', () => {
     it('verifies the account', async () => {
         await register();
-        const res = await request(app).get('/api/auth/verify').query({ token: lastTokenFrom(mockedVerifyEmail) });
+        const res = await request(server).get('/api/auth/verify').query({ token: lastTokenFrom(mockedVerifyEmail) });
         expect(res.status).toBe(200);
         const user = await User.findOne({ email: EMAIL });
         expect(user?.verified).toBe(true);
     });
 
     it('rejects an invalid token with 400', async () => {
-        const res = await request(app).get('/api/auth/verify').query({ token: 'bogus' });
+        const res = await request(server).get('/api/auth/verify').query({ token: 'bogus' });
         expect(res.status).toBe(400);
     });
 
     it('consumes the token so a second use fails', async () => {
         await register();
         const token = lastTokenFrom(mockedVerifyEmail);
-        await request(app).get('/api/auth/verify').query({ token }).expect(200);
-        const res = await request(app).get('/api/auth/verify').query({ token });
+        await request(server).get('/api/auth/verify').query({ token }).expect(200);
+        const res = await request(server).get('/api/auth/verify').query({ token });
         expect(res.status).toBe(400);
     });
 });
@@ -151,13 +150,13 @@ describe('POST /api/auth/resend-verification', () => {
     it('sends mail for an unverified account', async () => {
         await register();
         mockedVerifyEmail.mockClear();
-        const res = await request(app).post('/api/auth/resend-verification').send({ email: EMAIL });
+        const res = await request(server).post('/api/auth/resend-verification').send({ email: EMAIL });
         expect(res.status).toBe(200);
         expect(mockedVerifyEmail).toHaveBeenCalledOnce();
     });
 
     it('returns 200 but sends nothing for an unknown email', async () => {
-        const res = await request(app).post('/api/auth/resend-verification').send({ email: 'nobody@example.com' });
+        const res = await request(server).post('/api/auth/resend-verification').send({ email: 'nobody@example.com' });
         expect(res.status).toBe(200);
         expect(mockedVerifyEmail).not.toHaveBeenCalled();
     });
@@ -165,7 +164,7 @@ describe('POST /api/auth/resend-verification', () => {
     it('returns 200 but sends nothing once already verified', async () => {
         await registerAndVerify();
         mockedVerifyEmail.mockClear();
-        const res = await request(app).post('/api/auth/resend-verification').send({ email: EMAIL });
+        const res = await request(server).post('/api/auth/resend-verification').send({ email: EMAIL });
         expect(res.status).toBe(200);
         expect(mockedVerifyEmail).not.toHaveBeenCalled();
     });
@@ -174,13 +173,13 @@ describe('POST /api/auth/resend-verification', () => {
 describe('POST /api/auth/forgot-password', () => {
     it('sends a reset email for a known account', async () => {
         await registerAndVerify();
-        const res = await request(app).post('/api/auth/forgot-password').send({ email: EMAIL });
+        const res = await request(server).post('/api/auth/forgot-password').send({ email: EMAIL });
         expect(res.status).toBe(200);
         expect(mockedResetEmail).toHaveBeenCalledOnce();
     });
 
     it('returns 200 but sends nothing for an unknown email', async () => {
-        const res = await request(app).post('/api/auth/forgot-password').send({ email: 'nobody@example.com' });
+        const res = await request(server).post('/api/auth/forgot-password').send({ email: 'nobody@example.com' });
         expect(res.status).toBe(200);
         expect(mockedResetEmail).not.toHaveBeenCalled();
     });
@@ -189,21 +188,21 @@ describe('POST /api/auth/forgot-password', () => {
 describe('POST /api/auth/reset-password', () => {
     it('sets a new password that works and rejects the old one', async () => {
         await registerAndVerify();
-        await request(app).post('/api/auth/forgot-password').send({ email: EMAIL });
+        await request(server).post('/api/auth/forgot-password').send({ email: EMAIL });
         const token = lastTokenFrom(mockedResetEmail);
 
-        await request(app).post('/api/auth/reset-password').send({ token, password: NEW_PASSWORD }).expect(200);
+        await request(server).post('/api/auth/reset-password').send({ token, password: NEW_PASSWORD }).expect(200);
         await login(EMAIL, PASSWORD).expect(401);
         await login(EMAIL, NEW_PASSWORD).expect(200);
     });
 
     it('rejects an invalid token with 400', async () => {
-        const res = await request(app).post('/api/auth/reset-password').send({ token: 'bogus', password: NEW_PASSWORD });
+        const res = await request(server).post('/api/auth/reset-password').send({ token: 'bogus', password: NEW_PASSWORD });
         expect(res.status).toBe(400);
     });
 
     it('rejects a short new password with 400', async () => {
-        const res = await request(app).post('/api/auth/reset-password').send({ token: 'bogus', password: 'short' });
+        const res = await request(server).post('/api/auth/reset-password').send({ token: 'bogus', password: 'short' });
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/password/i);
     });
@@ -211,7 +210,7 @@ describe('POST /api/auth/reset-password', () => {
 
 describe('POST /api/auth/change-password', () => {
     it('requires authentication', async () => {
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/auth/change-password')
             .send({ currentPassword: PASSWORD, newPassword: NEW_PASSWORD });
         expect(res.status).toBe(401);
@@ -219,7 +218,7 @@ describe('POST /api/auth/change-password', () => {
 
     it('rejects a wrong current password with 401', async () => {
         const { token } = await registerVerifyLogin();
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/auth/change-password')
             .set('Authorization', `Bearer ${token}`)
             .send({ currentPassword: 'wrongpass', newPassword: NEW_PASSWORD });
@@ -228,14 +227,14 @@ describe('POST /api/auth/change-password', () => {
 
     it('changes the password and returns a working new token', async () => {
         const { token } = await registerVerifyLogin();
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/auth/change-password')
             .set('Authorization', `Bearer ${token}`)
             .send({ currentPassword: PASSWORD, newPassword: NEW_PASSWORD });
         expect(res.status).toBe(200);
         expect(res.body.token).toBeTruthy();
 
-        await request(app).get('/api/auth/me').set('Authorization', `Bearer ${res.body.token}`).expect(200);
+        await request(server).get('/api/auth/me').set('Authorization', `Bearer ${res.body.token}`).expect(200);
         await login(EMAIL, NEW_PASSWORD).expect(200);
     });
 });
@@ -243,30 +242,63 @@ describe('POST /api/auth/change-password', () => {
 describe('GET /api/auth/me', () => {
     it('returns the current user with a valid token', async () => {
         const { token } = await registerVerifyLogin();
-        const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
+        const res = await request(server).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
         expect(res.status).toBe(200);
         expect(res.body.user).toMatchObject({
             email: EMAIL,
             verified: true,
-            displayName: 'Test User',
+            displayName: DISPLAY_NAME,
         });
     });
 
     it('returns 401 without a token', async () => {
-        const res = await request(app).get('/api/auth/me');
+        const res = await request(server).get('/api/auth/me');
         expect(res.status).toBe(401);
     });
 
     it('returns 401 with a malformed token', async () => {
-        const res = await request(app).get('/api/auth/me').set('Authorization', 'Bearer not-a-jwt');
+        const res = await request(server).get('/api/auth/me').set('Authorization', 'Bearer not-a-jwt');
         expect(res.status).toBe(401);
     });
 
     it('rejects a token issued before the password changed', async () => {
         const { token, id } = await registerVerifyLogin();
-        await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`).expect(200);
+        await request(server).get('/api/auth/me').set('Authorization', `Bearer ${token}`).expect(200);
 
         await User.updateOne({ _id: id }, { passwordChangedAt: new Date(Date.now() + 10_000) });
-        await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`).expect(401);
+        await request(server).get('/api/auth/me').set('Authorization', `Bearer ${token}`).expect(401);
+    });
+});
+
+describe('avatar uploads', () => {
+    it('requires auth for the upload url', async () => {
+        const res = await request(server).get('/api/auth/me/avatar-upload-url');
+        expect(res.status).toBe(401);
+    });
+
+    it('returns a presigned upload url and key', async () => {
+        const { token } = await registerVerifyLogin();
+        const res = await request(server).get('/api/auth/me/avatar-upload-url').set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(res.body).toMatchObject({ url: expect.any(String), key: expect.any(String) });
+    });
+
+    it('requires auth to set the avatar', async () => {
+        const res = await request(server).post('/api/auth/me/avatar');
+        expect(res.status).toBe(401);
+    });
+
+    it('sets avatarKey and shows it on /me', async () => {
+        const { token, id } = await registerVerifyLogin();
+
+        const before = await request(server).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
+        expect(before.body.user.avatarKey).toBeFalsy();
+
+        const res = await request(server).post('/api/auth/me/avatar').set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(res.body.user.avatarKey).toBe(`avatars/${id}.jpg`);
+
+        const after = await request(server).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
+        expect(after.body.user.avatarKey).toBe(`avatars/${id}.jpg`);
     });
 });
