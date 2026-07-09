@@ -19,6 +19,7 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
+  int _feedReloadVersion = 0;
 
   void _goToLogin() {
     setState(() {
@@ -45,8 +46,15 @@ class _AppShellState extends State<AppShell> {
 
   void _handlePostCreated() {
     setState(() {
+      _feedReloadVersion++;
       _selectedIndex = 0;
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Food post created.'),
+      ),
+    );
   }
 
   @override
@@ -56,6 +64,7 @@ class _AppShellState extends State<AppShell> {
       builder: (context, _) {
         final pages = [
           FeedPage(
+            key: ValueKey(_feedReloadVersion),
             authSession: widget.authSession,
             onRequireLogin: _goToLogin,
             onCreatePost: _goToCreatePost,
