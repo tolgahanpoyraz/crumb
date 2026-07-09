@@ -1,189 +1,151 @@
 import 'package:flutter/material.dart';
 
-import '../../api/api_config.dart';
+import '../../api/posts_api.dart';
 import '../../models/food_post.dart';
+import '../auth/auth_session.dart';
 
-class PostCard extends StatelessWidget {
-  final FoodPost post;
-
+class PostCard extends StatefulWidget {
   const PostCard({
     super.key,
     required this.post,
+    required this.authSession,
+    required this.onRequireLogin,
+    required this.onVoteSubmitted,
   });
 
-  String? get imageUrl {
-    if (post.imageKey == null || post.imageKey!.isEmpty) {
-      return null;
+  final FoodPost post;
+  final AuthSession authSession;
+  final VoidCallback onRequireLogin;
+  final Future<void> Function() onVoteSubmitted;
+
+  @override
+  State<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard> {
+  bool _isVoting = false;
+
+  Future<void> _vote(String type) async {
+    if (!widget.authSession.isLoggedIn) {
+      widget.onRequireLogin();
+      return;
     }
 
-    return '${ApiConfig.imageBaseUrl}${post.imageKey}';
+    final token = widget.authSession.token;
+
+    if (token == null || token.isEmpty) {
+      widget.onRequireLogin();
+      return;
+    }
+
+    setState(() {
+      _isVoting = true;
+    });
+
+    try {
+      await PostsApi.votePost(
+        token: token,
+        postId: widget.post.id,
+        type: type,
+      );
+
+      await widget.onVoteSubmitted();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vote submitted.'),
+        ),
+      );
+    } on PostsApiException catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.message),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not submit vote.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isVoting = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final confidencePercent = post.confidence == null
-        ? null
-        : (post.confidence! * 100).round();
+    final post = widget.post;
+
+    final confidenceText = post.confidence == null
+        ? 'unavailable'
+        : '${(post.confidence! * 100).round()}%';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (imageUrl != null)
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(
-                imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey.shade200,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.image_not_supported_outlined),
-                  );
-                },
-              ),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              post.foodName,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.foodName,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-
-                const SizedBox(height: 6),
-
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 18),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        post.location,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                if (post.badges.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: post.badges.map((badge) {
-                      return Chip(
+            const SizedBox(height: 4),
+            Text(post.location),
+            const SizedBox(height: 8),
+            Text('Status: ${post.status}'),
+            const SizedBox(height: 4),
+            Text('Confidence: $confidenceText'),
+            const SizedBox(height: 8),
+            Text(
+              'Still here: ${post.presentVotes} · Gone: ${post.goneVotes}',
+            ),
+            if (post.badges.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                children: post.badges
+                    .map(
+                      (badge) => Chip(
                         label: Text(badge),
-                        visualDensity: VisualDensity.compact,
-                      );
-                    }).toList(),
-                  ),
-
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    _StatPill(
-                      icon: Icons.thumb_up_alt_outlined,
-                      label: '${post.presentVotes} still there',
-                    ),
-                    const SizedBox(width: 8),
-                    _StatPill(
-                      icon: Icons.thumb_down_alt_outlined,
-                      label: '${post.goneVotes} gone',
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    _StatusPill(status: post.status),
-                    if (confidencePercent != null) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        '$confidencePercent% confidence',
-                        style: TextStyle(color: Colors.grey.shade700),
                       ),
-                    ],
-                  ],
+                    )
+                    .toList(),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _isVoting ? null : () => _vote('present'),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Still here'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _isVoting ? null : () => _vote('gone'),
+                    icon: const Icon(Icons.cancel_outlined),
+                    label: const Text('Gone'),
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _StatPill({
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16),
-          const SizedBox(width: 4),
-          Text(label),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  final String status;
-
-  const _StatusPill({
-    required this.status,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final label = switch (status) {
-      'fresh' => 'Fresh',
-      'likely' => 'Likely there',
-      'fading' => 'Fading',
-      'gone' => 'Gone',
-      _ => status,
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.green.shade200),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: Colors.green.shade900,
-          fontWeight: FontWeight.w600,
+          ],
         ),
       ),
     );

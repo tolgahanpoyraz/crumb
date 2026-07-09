@@ -58,6 +58,25 @@ class PostsApi {
     return FoodPost.fromJson(postJson);
   }
 
+  static Future<void> votePost({
+    required String token,
+    required String postId,
+    required String type,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/posts/$postId/vote'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'type': type,
+      }),
+    );
+
+    _decodeResponse(response);
+  }
+
   static Map<String, dynamic> _decodeResponse(http.Response response) {
     final data = response.body.isNotEmpty
         ? jsonDecode(response.body) as Map<String, dynamic>

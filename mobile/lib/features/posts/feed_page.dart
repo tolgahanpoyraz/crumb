@@ -102,7 +102,12 @@ class _FeedPageState extends State<FeedPage> {
               padding: const EdgeInsets.all(16),
               itemCount: posts.length,
               itemBuilder: (context, index) {
-                return PostCard(post: posts[index]);
+                return PostCard(
+                  post: posts[index],
+                  authSession: widget.authSession,
+                  onRequireLogin: widget.onRequireLogin,
+                  onVoteSubmitted: refreshPosts,
+                );
               },
             ),
           );
