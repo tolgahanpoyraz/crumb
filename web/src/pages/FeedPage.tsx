@@ -10,9 +10,10 @@ const MOCK_POSTS: Post[] = [
   {
     id: 'mock-1',
     foodName: 'Voodoo Doughnuts (Assorted)',
-    location: 'Student Union, 2nd Floor Lounge',
-    badges: ['doughnuts', 'sweet', 'vegetarian'],
-    author: 'donut_hero@univ.edu',
+    type: 'baked-goods',
+    dietaryTags: ['vegetarian'],
+    location: { id: 'student-union', name: 'Student Union', latitude: 28.6016695, longitude: -81.2005277 },
+    author: 'mock-user-1',
     status: 'fresh',
     confidence: 0.94,
     tallies: { present: 6, gone: 0 },
@@ -22,9 +23,10 @@ const MOCK_POSTS: Post[] = [
   {
     id: 'mock-2',
     foodName: 'Leftover Panera Catering (Wraps & Salad)',
-    location: 'HEC 101 Seminar Room',
-    badges: ['sandwiches', 'salad', 'healthy'],
-    author: 'events_office@univ.edu',
+    type: 'meal',
+    dietaryTags: ['vegetarian'],
+    location: { id: 'l3harris-engineering-center', name: 'L3Harris Engineering Center (HEC)', latitude: 28.6006421, longitude: -81.1977141 },
+    author: 'mock-user-2',
     status: 'likely',
     confidence: 0.72,
     tallies: { present: 4, gone: 1 },
@@ -33,10 +35,11 @@ const MOCK_POSTS: Post[] = [
   },
   {
     id: 'mock-3',
-    foodName: 'Cold Pizza (Domino\'s Pepperoni)',
-    location: 'Engineering Building Lobby',
-    badges: ['pizza', 'free'],
-    author: 'hackathon_host@univ.edu',
+    foodName: "Cold Pizza (Domino's Pepperoni)",
+    type: 'pizza',
+    dietaryTags: [],
+    location: { id: 'engineering-i', name: 'Engineering I', latitude: 28.6014069, longitude: -81.198508 },
+    author: 'mock-user-3',
     status: 'fading',
     confidence: 0.38,
     tallies: { present: 1, gone: 2 },
@@ -104,7 +107,7 @@ export const FeedPage: React.FC = () => {
               }
               const totalVotes = updatedTallies.present + updatedTallies.gone;
               const newConfidence = updatedTallies.present / totalVotes;
-              
+
               let newStatus: Post['status'] = 'gone';
               if (newConfidence >= 0.8) newStatus = 'fresh';
               else if (newConfidence >= 0.5) newStatus = 'likely';
@@ -154,12 +157,14 @@ export const FeedPage: React.FC = () => {
     }
   };
 
-  // Filter posts based on search query
-  const filteredPosts = posts.filter(post => 
-    post.foodName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.badges.some(badge => badge.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Filter posts based on search query. 
+  const filteredPosts = posts.filter(post => {
+    const query = searchQuery.toLowerCase();
+    const matchesFoodName = post.foodName.toLowerCase().includes(query);
+    const matchesLocation = post.location.name.toLowerCase().includes(query);
+    const matchesTag = post.dietaryTags.some(tag => tag.toLowerCase().includes(query));
+    return matchesFoodName || matchesLocation || matchesTag;
+  });
 
   const getStatusBadgeClass = (status: Post['status']) => {
     switch (status) {
@@ -191,6 +196,124 @@ export const FeedPage: React.FC = () => {
     }
   };
 
+  // Build the main body up front 
+  let feedBody: React.ReactNode;
+
+  if (loading) {
+    feedBody = (
+      <div style={loadingContainerStyle}>
+        <div className="spinner" style={spinnerStyle}></div>
+        <p>Loading live feed...</p>
+      </div>
+    );
+  } else if (filteredPosts.length === 0) {
+    feedBody = (
+      <div style={emptyStateCardStyle} className="glass-panel">
+        <span style={{ fontSize: '3rem' }}>🍃</span>
+        <h3 style={{ marginTop: '16px', marginBottom: '8px' }}>No Food Spotted</h3>
+        <p>We couldn't find any active reports matching your search. Why not report some?</p>
+      </div>
+    );
+  } else {
+    feedBody = (
+      <div style={postsGridStyle}>
+        {filteredPosts.map(post => {
+          const confidencePercent = Math.round((post.confidence ?? 0.5) * 100);
+          const statusColor = getStatusColor(post.status);
+
+          return (
+            <article key={post.id} className="glass-panel" style={cardOverrideStyle}>
+              {/* Badge Header */}
+              <div style={cardHeaderStyle}>
+                <span className={getStatusBadgeClass(post.status)}>
+                  {post.status}
+                </span>
+                <span style={timeStyle}>
+                  {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+
+              {/* Title & Location */}
+              <div style={{ flex: 1, margin: '12px 0' }}>
+                <h3 style={foodTitleStyle}>{post.foodName}</h3>
+                <p style={locationStyle}>📍 {post.location.name}</p>
+              </div>
+
+              {/* Dietary Tags */}
+              <div style={tagsContainerStyle}>
+                {post.dietaryTags.map((tag, idx) => (
+                  <span key={idx} style={tagStyle}>
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+
+              {/* Confidence Meter Section */}
+              <div style={confidenceSectionStyle}>
+                <div style={confidenceHeaderStyle}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Confidence Level
+                  </span>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 700, color: statusColor }}>
+                    {confidencePercent}%
+                  </span>
+                </div>
+
+                {/* Meter Track */}
+                <div style={meterTrackStyle}>
+                  <div style={{
+                    height: '100%',
+                    width: `${confidencePercent}%`,
+                    backgroundColor: statusColor,
+                    borderRadius: '99px',
+                    boxShadow: `0 0 10px ${statusColor}40`,
+                    transition: 'width var(--transition-slow) ease-out, background-color var(--transition-normal)'
+                  }} />
+                </div>
+                <div style={meterLabelsStyle}>
+                  <span>{getStatusText(post.status)}</span>
+                  <span>({post.tallies.present} / {post.tallies.present + post.tallies.gone} votes)</span>
+                </div>
+              </div>
+
+              {/* Card Action Buttons (Voting) */}
+              <div style={actionRowStyle}>
+                <button
+                  disabled={votingIds[post.id]}
+                  onClick={() => handleVote(post.id, 'present')}
+                  className="btn-secondary"
+                  style={{
+                    ...voteButtonStyle,
+                    borderColor: 'rgba(16, 185, 129, 0.2)',
+                    background: 'rgba(16, 185, 129, 0.04)'
+                  }}
+                >
+                  👍 Still Here
+                </button>
+                <button
+                  disabled={votingIds[post.id]}
+                  onClick={() => handleVote(post.id, 'gone')}
+                  className="btn-secondary"
+                  style={{
+                    ...voteButtonStyle,
+                    borderColor: 'rgba(239, 68, 68, 0.2)',
+                    background: 'rgba(239, 68, 68, 0.04)'
+                  }}
+                >
+                  👎 All Gone
+                </button>
+              </div>
+
+              {voteErrors[post.id] && (
+                <p style={voteErrorStyle}>{voteErrors[post.id]}</p>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="fade-in" style={feedPageStyle}>
       {/* Header section */}
@@ -199,7 +322,7 @@ export const FeedPage: React.FC = () => {
           <h1 style={{ marginBottom: '8px', fontSize: '2.2rem' }}>Active Food Feed</h1>
           <p>Confidence-ranked real-time reports of free grub on campus.</p>
         </div>
-        
+
         {/* Search Bar */}
         <div style={searchWrapperStyle}>
           <input
@@ -222,115 +345,7 @@ export const FeedPage: React.FC = () => {
         </div>
       )}
 
-      {loading ? (
-        <div style={loadingContainerStyle}>
-          <div className="spinner" style={spinnerStyle}></div>
-          <p>Loading live feed...</p>
-        </div>
-      ) : filteredPosts.length === 0 ? (
-        <div style={emptyStateCardStyle} className="glass-panel">
-          <span style={{ fontSize: '3rem' }}>🍃</span>
-          <h3 style={{ marginTop: '16px', marginBottom: '8px' }}>No Food Spotted</h3>
-          <p>We couldn't find any active reports matching your search. Why not report some?</p>
-        </div>
-      ) : (
-        /* Posts Card Grid */
-        <div style={postsGridStyle}>
-          {filteredPosts.map(post => {
-            const confidencePercent = Math.round((post.confidence ?? 0.5) * 100);
-            const statusColor = getStatusColor(post.status);
-            
-            return (
-              <article key={post.id} className="glass-panel" style={cardOverrideStyle}>
-                {/* Badge Header */}
-                <div style={cardHeaderStyle}>
-                  <span className={getStatusBadgeClass(post.status)}>
-                    {post.status}
-                  </span>
-                  <span style={timeStyle}>
-                    {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-
-                {/* Title & Location */}
-                <div style={{ flex: 1, margin: '12px 0' }}>
-                  <h3 style={foodTitleStyle}>{post.foodName}</h3>
-                  <p style={locationStyle}>📍 {post.location}</p>
-                </div>
-
-                {/* Tags / Badges */}
-                <div style={tagsContainerStyle}>
-                  {post.badges.map((badge, idx) => (
-                    <span key={idx} style={tagStyle}>
-                      #{badge}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Confidence Meter Section */}
-                <div style={confidenceSectionStyle}>
-                  <div style={confidenceHeaderStyle}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Confidence Level
-                    </span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: statusColor }}>
-                      {confidencePercent}%
-                    </span>
-                  </div>
-
-                  {/* Meter Track */}
-                  <div style={meterTrackStyle}>
-                    <div style={{
-                      height: '100%',
-                      width: `${confidencePercent}%`,
-                      backgroundColor: statusColor,
-                      borderRadius: '99px',
-                      boxShadow: `0 0 10px ${statusColor}40`,
-                      transition: 'width var(--transition-slow) ease-out, background-color var(--transition-normal)'
-                    }} />
-                  </div>
-                  <div style={meterLabelsStyle}>
-                    <span>{getStatusText(post.status)}</span>
-                    <span>({post.tallies.present} / {post.tallies.present + post.tallies.gone} votes)</span>
-                  </div>
-                </div>
-
-                {/* Card Action Buttons (Voting) */}
-                <div style={actionRowStyle}>
-                  <button
-                    disabled={votingIds[post.id]}
-                    onClick={() => handleVote(post.id, 'present')}
-                    className="btn-secondary"
-                    style={{
-                      ...voteButtonStyle,
-                      borderColor: 'rgba(16, 185, 129, 0.2)',
-                      background: 'rgba(16, 185, 129, 0.04)'
-                    }}
-                  >
-                    👍 Still Here
-                  </button>
-                  <button
-                    disabled={votingIds[post.id]}
-                    onClick={() => handleVote(post.id, 'gone')}
-                    className="btn-secondary"
-                    style={{
-                      ...voteButtonStyle,
-                      borderColor: 'rgba(239, 68, 68, 0.2)',
-                      background: 'rgba(239, 68, 68, 0.04)'
-                    }}
-                  >
-                    👎 All Gone
-                  </button>
-                </div>
-
-                {voteErrors[post.id] && (
-                  <p style={voteErrorStyle}>{voteErrors[post.id]}</p>
-                )}
-              </article>
-            );
-          })}
-        </div>
-      )}
+      {feedBody}
     </div>
   );
 };

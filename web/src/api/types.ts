@@ -2,7 +2,9 @@
 
 export interface User {
   id: string;
+  displayName: string;
   email: string;
+  avatarKey?: string;
   verified: boolean;
 }
 
@@ -17,17 +19,35 @@ export interface MeResponse {
 
 export type PostStatus = 'fresh' | 'likely' | 'fading' | 'gone';
 
+export type PostType = 'pizza' | 'meal' | 'snacks' | 'baked-goods' | 'drinks' | 'other';
+
+export const POST_TYPES: PostType[] = ['pizza', 'meal', 'snacks', 'baked-goods', 'drinks', 'other'];
+
+export type DietaryTag = 'vegetarian' | 'vegan' | 'halal' | 'kosher' | 'gluten-free';
+
+export const DIETARY_TAGS: DietaryTag[] = ['vegetarian', 'vegan', 'halal', 'kosher', 'gluten-free'];
+
 export interface Tallies {
   present: number;
   gone: number;
 }
 
+// Matches the CampusLocation 
+export interface PostLocation {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface Post {
   id: string;
   foodName: string;
-  location: string;
+  type: PostType;
+  dietaryTags: DietaryTag[];
+  location: PostLocation;
+  locationDetail?: string;
   imageKey?: string;
-  badges: string[];
   author: string;
   status: PostStatus;
   confidence?: number;
@@ -59,4 +79,3 @@ export interface VoteResponse {
 export interface FeedResponse {
   posts: Post[];
 }
-
