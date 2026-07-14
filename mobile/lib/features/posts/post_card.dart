@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../api/api_config.dart';
 import '../../api/posts_api.dart';
 import '../../models/food_post.dart';
+import '../../theme/app_theme.dart';
 import '../auth/auth_session.dart';
 
 class PostCard extends StatefulWidget {
@@ -44,9 +45,7 @@ class _PostCardState extends State<PostCard> {
   };
 
   String? _buildImageUrl(String? imageKey) {
-    if (imageKey == null || imageKey.trim().isEmpty) {
-      return null;
-    }
+    if (imageKey == null || imageKey.trim().isEmpty) return null;
 
     final trimmedKey = imageKey.trim();
 
@@ -55,16 +54,8 @@ class _PostCardState extends State<PostCard> {
       return trimmedKey;
     }
 
-    final baseUrl = ApiConfig.imageBaseUrl.replaceAll(
-      RegExp(r'/$'),
-      '',
-    );
-
-    final normalizedKey = trimmedKey.replaceFirst(
-      RegExp(r'^/'),
-      '',
-    );
-
+    final baseUrl = ApiConfig.imageBaseUrl.replaceAll(RegExp(r'/$'), '');
+    final normalizedKey = trimmedKey.replaceFirst(RegExp(r'^/'), '');
     return '$baseUrl/$normalizedKey';
   }
 
@@ -90,18 +81,49 @@ class _PostCardState extends State<PostCard> {
 
   String _locationName(FoodPost post) {
     final name = post.location.name.trim();
-
-    if (name.isNotEmpty) {
-      return name;
-    }
+    if (name.isNotEmpty) return name;
 
     final id = post.location.id.trim();
-
-    if (id.isNotEmpty) {
-      return _capitalizeWords(id);
-    }
+    if (id.isNotEmpty) return _capitalizeWords(id);
 
     return 'Unknown location';
+  }
+
+  String _relativeTime(DateTime? date) {
+    if (date == null) return 'Recently';
+
+    final difference = DateTime.now().difference(date.toLocal());
+    if (difference.isNegative || difference.inMinutes < 1) return 'Just now';
+    if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
+    if (difference.inHours < 24) return '${difference.inHours}h ago';
+    if (difference.inDays < 7) return '${difference.inDays}d ago';
+    return '${date.toLocal().month}/${date.toLocal().day}';
+  }
+
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'fresh':
+        return AppColors.mint;
+      case 'fading':
+      case 'likely':
+        return AppColors.amber;
+      case 'gone':
+        return AppColors.cocoaMuted;
+      default:
+        return AppColors.coral;
+    }
+  }
+
+  Color _statusBackground(String status) {
+    switch (status.toLowerCase()) {
+      case 'fresh':
+        return AppColors.mintSoft;
+      case 'fading':
+      case 'likely':
+        return AppColors.amberSoft;
+      default:
+        return AppColors.creamDeep;
+    }
   }
 
   Future<void> _vote(String type) async {
@@ -111,15 +133,12 @@ class _PostCardState extends State<PostCard> {
     }
 
     final token = widget.authSession.token;
-
     if (token == null || token.isEmpty) {
       widget.onRequireLogin();
       return;
     }
 
-    setState(() {
-      _isVoting = true;
-    });
+    setState(() => _isVoting = true);
 
     try {
       await PostsApi.votePost(
@@ -127,38 +146,24 @@ class _PostCardState extends State<PostCard> {
         postId: widget.post.id,
         type: type,
       );
-
       await widget.onVoteSubmitted();
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vote submitted.'),
-        ),
+        const SnackBar(content: Text('Vote submitted.')),
       );
     } on PostsApiException catch (error) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.message),
-        ),
+        SnackBar(content: Text(error.message)),
       );
     } catch (_) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not submit vote.'),
-        ),
+        const SnackBar(content: Text('Could not submit vote.')),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isVoting = false;
-        });
-      }
+      if (mounted) setState(() => _isVoting = false);
     }
   }
 
@@ -166,69 +171,72 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     final post = widget.post;
     final imageUrl = _buildImageUrl(post.imageKey);
-
-    final confidenceText = post.confidence == null
-        ? 'Unavailable'
-        : '${(post.confidence! * 100).round()}%';
-
     final locationDetail = post.locationDetail?.trim();
+    final status = post.status.isEmpty ? 'fresh' : post.status;
+    final statusColor = _statusColor(status);
+    final confidence = post.confidence?.clamp(0.0, 1.0);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        boxShadow: AppTheme.softShadow,
+      ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (imageUrl != null)
-            Image.network(
-              imageUrl,
-              width: double.infinity,
-              height: 220,
-              fit: BoxFit.cover,
-              loadingBuilder: (
-                context,
-                child,
-                loadingProgress,
-              ) {
-                if (loadingProgress == null) {
-                  return child;
-                }
-
-                return const SizedBox(
-                  height: 220,
-                  child: Center(
-                    child: CircularProgressIndicator(),
+          Stack(
+            children: [
+              _PostImage(imageUrl: imageUrl),
+              Positioned(
+                top: 14,
+                left: 14,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
                   ),
-                );
-              },
-              errorBuilder: (
-                context,
-                error,
-                stackTrace,
-              ) {
-                return Container(
-                  width: double.infinity,
-                  height: 220,
-                  alignment: Alignment.center,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest,
-                  child: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.broken_image_outlined,
-                        size: 48,
+                  decoration: BoxDecoration(
+                    color: _statusBackground(status),
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x17000000),
+                        blurRadius: 10,
+                        offset: Offset(0, 3),
                       ),
-                      SizedBox(height: 8),
-                      Text('Could not load photo'),
                     ],
                   ),
-                );
-              },
-            ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Text(
+                        '${_capitalizeWords(status)}${confidence == null ? '' : ' · ${(confidence * 100).round()}%'}',
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -237,98 +245,231 @@ class _PostCardState extends State<PostCard> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    Chip(
-                      avatar: const Icon(
-                        Icons.restaurant_outlined,
-                        size: 18,
-                      ),
-                      label: Text(
-                        _formatFoodType(post.type),
-                      ),
-                    ),
-                    ...post.dietaryTags.map(
-                      (tag) => Chip(
-                        label: Text(
-                          _formatDietaryTag(tag),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
-                      child: Icon(
-                        Icons.location_on_outlined,
-                        size: 18,
+                    const Icon(
+                      Icons.location_on_rounded,
+                      color: AppColors.coral,
+                      size: 19,
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        [
+                          _locationName(post),
+                          if (locationDetail != null && locationDetail.isNotEmpty)
+                            locationDetail,
+                        ].join(' · '),
+                        style: const TextStyle(
+                          color: AppColors.cocoaMuted,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _locationName(post),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (locationDetail != null &&
-                              locationDetail.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(locationDetail),
-                          ],
-                        ],
+                    const SizedBox(width: 8),
+                    Text(
+                      _relativeTime(post.createdAt),
+                      style: const TextStyle(
+                        color: AppColors.cocoaMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Text('Status: ${_capitalizeWords(post.status)}'),
-                const SizedBox(height: 4),
-                Text('Confidence: $confidenceText'),
-                const SizedBox(height: 8),
-                Text(
-                  'Still here: ${post.presentVotes} · '
-                  'Gone: ${post.goneVotes}',
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
+                  children: [
+                    _PostTag(
+                      label: _formatFoodType(post.type),
+                      icon: Icons.restaurant_rounded,
+                    ),
+                    ...post.dietaryTags.map(
+                      (tag) => _PostTag(label: _formatDietaryTag(tag)),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                if (confidence != null) ...[
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      const Text(
+                        'Freshness',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${(confidence * 100).round()}%',
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: confidence,
+                      minHeight: 8,
+                      color: statusColor,
+                      backgroundColor: AppColors.creamDeep,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                const Text(
+                  'Is it still there?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed: _isVoting
-                            ? null
-                            : () => _vote('present'),
-                        icon: const Icon(
-                          Icons.check_circle_outline,
+                        onPressed: _isVoting ? null : () => _vote('present'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.mint,
+                          disabledBackgroundColor: AppColors.mintSoft,
                         ),
-                        label: const Text('Still here'),
+                        icon: _isVoting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.check_rounded),
+                        label: Text('Still here ${post.presentVotes}'),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed:
-                            _isVoting ? null : () => _vote('gone'),
-                        icon: const Icon(
-                          Icons.cancel_outlined,
-                        ),
-                        label: const Text('Gone'),
+                        onPressed: _isVoting ? null : () => _vote('gone'),
+                        icon: const Icon(Icons.close_rounded),
+                        label: Text('Gone ${post.goneVotes}'),
                       ),
                     ),
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PostImage extends StatelessWidget {
+  const _PostImage({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl == null) return const _ImagePlaceholder();
+
+    return Image.network(
+      imageUrl!,
+      width: double.infinity,
+      height: 210,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const _ImagePlaceholder(showLoader: true);
+      },
+      errorBuilder: (_, __, ___) => const _ImagePlaceholder(isError: true),
+    );
+  }
+}
+
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder({
+    this.showLoader = false,
+    this.isError = false,
+  });
+
+  final bool showLoader;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 210,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.coralSoft, AppColors.creamDeep],
+        ),
+      ),
+      alignment: Alignment.center,
+      child: showLoader
+          ? const CircularProgressIndicator()
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isError
+                      ? Icons.broken_image_outlined
+                      : Icons.lunch_dining_rounded,
+                  size: 48,
+                  color: AppColors.cocoaMuted,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isError ? 'Photo unavailable' : 'Shared campus food',
+                  style: const TextStyle(
+                    color: AppColors.cocoaMuted,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _PostTag extends StatelessWidget {
+  const _PostTag({required this.label, this.icon});
+
+  final String label;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.cream,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: AppColors.coral),
+            const SizedBox(width: 5),
+          ],
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.cocoaMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],

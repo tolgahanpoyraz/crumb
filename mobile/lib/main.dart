@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_root.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const CampusFoodApp());
@@ -12,14 +13,9 @@ class CampusFoodApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Campus Food Finder',
+      title: 'Crumb',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
       home: const AppRoot(),
     );
   }

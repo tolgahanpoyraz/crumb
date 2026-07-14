@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../api/posts_api.dart';
 import '../../models/food_post.dart';
+import '../../theme/app_theme.dart';
 import '../auth/auth_session.dart';
 
 class CreatePostPage extends StatefulWidget {
@@ -345,20 +346,19 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
     if (_locationsError != null) {
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).colorScheme.error,
-          ),
-          borderRadius: BorderRadius.circular(8),
+          color: const Color(0xFFFFE6E2),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               _locationsError!,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
+              style: const TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),
@@ -375,8 +375,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
     return DropdownButtonFormField<String>(
       initialValue: _selectedLocationId,
       decoration: const InputDecoration(
-        labelText: 'Campus location',
-        border: OutlineInputBorder(),
+        labelText: 'Choose a campus location',
+        prefixIcon: Icon(Icons.location_on_outlined),
       ),
       items: _locations
           .map(
@@ -403,43 +403,138 @@ class _CreatePostPageState extends State<CreatePostPage> {
     );
   }
 
+  Widget _buildPhotoPicker() {
+    if (_selectedImageBytes != null) {
+      return Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Image.memory(
+              _selectedImageBytes!,
+              height: 230,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned(
+            right: 12,
+            top: 12,
+            child: Row(
+              children: [
+                _PhotoAction(
+                  tooltip: 'Change photo',
+                  icon: Icons.edit_outlined,
+                  onPressed: _isSubmitting ? null : _showPhotoOptions,
+                ),
+                const SizedBox(width: 8),
+                _PhotoAction(
+                  tooltip: 'Remove photo',
+                  icon: Icons.delete_outline_rounded,
+                  onPressed: _isSubmitting ? null : _removeImage,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Semantics(
+      button: true,
+      label: 'Add a food photo',
+      child: InkWell(
+        onTap: _isSubmitting ? null : _showPhotoOptions,
+        borderRadius: BorderRadius.circular(24),
+        child: CustomPaint(
+          painter: _DashedRoundedRectPainter(
+            color: const Color(0x8C9D7365),
+            radius: 24,
+          ),
+          child: Container(
+            height: 210,
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 29,
+                  backgroundColor: AppColors.coralSoft,
+                  child: Icon(
+                    Icons.add_a_photo_outlined,
+                    color: AppColors.coral,
+                    size: 29,
+                  ),
+                ),
+                SizedBox(height: 14),
+                Text(
+                  'Add a food photo',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Take a photo or choose from your library',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.cocoaMuted,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!widget.authSession.isLoggedIn) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Create Food Post'),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.lock_outline,
-                  size: 48,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Log in to create a post',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+        body: SafeArea(
+          bottom: false,
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(30),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: const BoxDecoration(
+                      color: AppColors.coralSoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.lock_outline_rounded,
+                      color: AppColors.coral,
+                      size: 40,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'You can browse food posts without an account, but you need to log in before posting.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: widget.onRequireLogin,
-                  child: const Text('Log in or sign up'),
-                ),
-              ],
+                  const SizedBox(height: 22),
+                  Text(
+                    'Log in to share food',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'You can browse without an account, but you need to log in before posting.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.cocoaMuted),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: widget.onRequireLogin,
+                    child: const Text('Log in or sign up'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -448,23 +543,31 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Food Post'),
+        title: const Text('New drop'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.pagePadding,
+          8,
+          AppTheme.pagePadding,
+          36,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _buildPhotoPicker(),
+              const SizedBox(height: 26),
+              const _FormSectionLabel('WHAT IS IT?'),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _foodNameController,
                 textInputAction: TextInputAction.next,
                 enabled: !_isSubmitting,
                 decoration: const InputDecoration(
-                  labelText: 'Food name',
-                  hintText: 'Leftover pizza, sandwiches, donuts...',
-                  border: OutlineInputBorder(),
+                  labelText: 'Food name or description',
+                  hintText: 'e.g. Leftover pizza — 6 boxes',
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -474,37 +577,30 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedFoodType,
-                decoration: const InputDecoration(
-                  labelText: 'Food type',
-                  border: OutlineInputBorder(),
-                ),
-                items: _foodTypes.entries
-                    .map(
-                      (entry) => DropdownMenuItem<String>(
-                        value: entry.key,
-                        child: Text(entry.value),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _isSubmitting
-                    ? null
-                    : (value) {
-                        setState(() {
-                          _selectedFoodType = value;
-                        });
-                      },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Food type is required';
-                  }
-
-                  return null;
-                },
+              const SizedBox(height: 22),
+              const _FormSectionLabel('TYPE'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _foodTypes.entries.map((entry) {
+                  return ChoiceChip(
+                    label: Text(entry.value),
+                    selected: _selectedFoodType == entry.key,
+                    onSelected: _isSubmitting
+                        ? null
+                        : (selected) {
+                            setState(() {
+                              _selectedFoodType = selected ? entry.key : null;
+                              _error = null;
+                            });
+                          },
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 22),
+              const _FormSectionLabel('WHERE?'),
+              const SizedBox(height: 8),
               _buildLocationField(),
               const SizedBox(height: 12),
               TextFormField(
@@ -516,18 +612,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   labelText: 'Specific location',
                   hintText: 'Room 101, second floor lounge...',
                   helperText: 'Optional',
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.pin_drop_outlined),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Dietary tags',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              const SizedBox(height: 8),
+              const _FormSectionLabel('DIETARY TAGS · OPTIONAL'),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                runSpacing: 4,
+                runSpacing: 8,
                 children: _dietaryTagLabels.entries
                     .map(
                       (entry) => FilterChip(
@@ -545,35 +638,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     )
                     .toList(),
               ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: _isSubmitting ? null : _showPhotoOptions,
-                icon: const Icon(
-                  Icons.add_photo_alternate_outlined,
-                ),
-                label: Text(
-                  _selectedImage == null ? 'Add photo' : 'Change photo',
-                ),
-              ),
-              if (_selectedImageBytes != null) ...[
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.memory(
-                    _selectedImageBytes!,
-                    height: 220,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                TextButton.icon(
-                  onPressed: _isSubmitting ? null : _removeImage,
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Remove photo'),
-                ),
-              ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 26),
               FilledButton.icon(
                 onPressed: _isSubmitting ||
                         _isLoadingLocations ||
@@ -586,20 +651,39 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
+                          color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.add),
+                    : const Icon(Icons.lunch_dining_rounded),
                 label: Text(
-                  _isSubmitting ? 'Posting...' : 'Post food',
+                  _isSubmitting ? 'Posting...' : 'Post free food',
                 ),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE6E2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -608,5 +692,94 @@ class _CreatePostPageState extends State<CreatePostPage> {
         ),
       ),
     );
+  }
+}
+
+class _FormSectionLabel extends StatelessWidget {
+  const _FormSectionLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: const TextStyle(
+        color: AppColors.cocoaMuted,
+        fontSize: 12,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 0.65,
+      ),
+    );
+  }
+}
+
+class _PhotoAction extends StatelessWidget {
+  const _PhotoAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.white,
+      shape: const CircleBorder(),
+      child: IconButton(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: Icon(icon, color: AppColors.coral),
+      ),
+    );
+  }
+}
+
+class _DashedRoundedRectPainter extends CustomPainter {
+  const _DashedRoundedRectPainter({
+    required this.color,
+    required this.radius,
+  });
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Offset.zero & size,
+          Radius.circular(radius),
+        ),
+      );
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    const dashLength = 6.0;
+    const gapLength = 5.0;
+
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(distance, distance + dashLength),
+          paint,
+        );
+        distance += dashLength + gapLength;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRoundedRectPainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.radius != radius;
   }
 }
