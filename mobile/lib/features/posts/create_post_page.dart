@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../api/posts_api.dart';
+import '../../models/food_post.dart';
 import '../auth/auth_session.dart';
 
 class CreatePostPage extends StatefulWidget {
@@ -26,31 +27,96 @@ class _CreatePostPageState extends State<CreatePostPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _foodNameController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _badgesController = TextEditingController();
+  final _locationDetailController = TextEditingController();
 
   final ImagePicker _imagePicker = ImagePicker();
+
+  static const Map<String, String> _foodTypes = {
+    'pizza': 'Pizza',
+    'meal': 'Meal',
+    'snacks': 'Snacks',
+    'baked-goods': 'Baked goods',
+    'drinks': 'Drinks',
+    'other': 'Other',
+  };
+
+  static const Map<String, String> _dietaryTagLabels = {
+    'vegetarian': 'Vegetarian',
+    'vegan': 'Vegan',
+    'halal': 'Halal',
+    'kosher': 'Kosher',
+    'gluten-free': 'Gluten-free',
+  };
+
+  List<CampusLocation> _locations = [];
+
+  String? _selectedFoodType;
+  String? _selectedLocationId;
+
+  final Set<String> _selectedDietaryTags = {};
 
   XFile? _selectedImage;
   Uint8List? _selectedImageBytes;
 
+  bool _isLoadingLocations = true;
   bool _isSubmitting = false;
+
+  String? _locationsError;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocations();
+  }
 
   @override
   void dispose() {
     _foodNameController.dispose();
-    _locationController.dispose();
-    _badgesController.dispose();
+    _locationDetailController.dispose();
     super.dispose();
   }
 
-  List<String> _parseBadges(String rawValue) {
-    return rawValue
-        .split(',')
-        .map((badge) => badge.trim())
-        .where((badge) => badge.isNotEmpty)
-        .toList();
+  Future<void> _loadLocations() async {
+    setState(() {
+      _isLoadingLocations = true;
+      _locationsError = null;
+    });
+
+    try {
+      final locations = await PostsApi.getLocations();
+
+      locations.sort(
+        (first, second) => first.name.toLowerCase().compareTo(
+              second.name.toLowerCase(),
+            ),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _locations = locations;
+        _isLoadingLocations = false;
+
+        if (locations.isEmpty) {
+          _locationsError = 'No campus locations are currently available.';
+        }
+      });
+    } on PostsApiException catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingLocations = false;
+        _locationsError = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingLocations = false;
+        _locationsError = 'Could not load campus locations.';
+      });
+    }
   }
 
   String _getImageContentType(XFile image) {
@@ -158,6 +224,16 @@ class _CreatePostPageState extends State<CreatePostPage> {
     });
   }
 
+  void _toggleDietaryTag(String tag, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedDietaryTags.add(tag);
+      } else {
+        _selectedDietaryTags.remove(tag);
+      }
+    });
+  }
+
   Future<void> _submitPost() async {
     if (!widget.authSession.isLoggedIn) {
       widget.onRequireLogin();
@@ -172,6 +248,16 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
     if (token == null || token.isEmpty) {
       widget.onRequireLogin();
+      return;
+    }
+
+    final selectedFoodType = _selectedFoodType;
+    final selectedLocationId = _selectedLocationId;
+
+    if (selectedFoodType == null || selectedLocationId == null) {
+      setState(() {
+        _error = 'Choose a food type and campus location.';
+      });
       return;
     }
 
@@ -194,18 +280,23 @@ class _CreatePostPageState extends State<CreatePostPage> {
       await PostsApi.createPost(
         token: token,
         foodName: _foodNameController.text,
-        location: _locationController.text,
-        badges: _parseBadges(_badgesController.text),
+        type: selectedFoodType,
+        locationId: selectedLocationId,
+        dietaryTags: _selectedDietaryTags.toList(),
+        locationDetail: _locationDetailController.text,
         imageKey: imageKey,
       );
 
-      _foodNameController.clear();
-      _locationController.clear();
-      _badgesController.clear();
-
       if (!mounted) return;
 
+      _foodNameController.clear();
+      _locationDetailController.clear();
+      _formKey.currentState?.reset();
+
       setState(() {
+        _selectedFoodType = null;
+        _selectedLocationId = null;
+        _selectedDietaryTags.clear();
         _selectedImage = null;
         _selectedImageBytes = null;
       });
@@ -230,6 +321,86 @@ class _CreatePostPageState extends State<CreatePostPage> {
         });
       }
     }
+  }
+
+  Widget _buildLocationField() {
+    if (_isLoadingLocations) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+              ),
+            ),
+            SizedBox(width: 12),
+            Text('Loading campus locations...'),
+          ],
+        ),
+      );
+    }
+
+    if (_locationsError != null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).colorScheme.error,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              _locationsError!,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _loadLocations,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try again'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return DropdownButtonFormField<String>(
+      initialValue: _selectedLocationId,
+      decoration: const InputDecoration(
+        labelText: 'Campus location',
+        border: OutlineInputBorder(),
+      ),
+      items: _locations
+          .map(
+            (location) => DropdownMenuItem<String>(
+              value: location.id,
+              child: Text(location.name),
+            ),
+          )
+          .toList(),
+      onChanged: _isSubmitting
+          ? null
+          : (value) {
+              setState(() {
+                _selectedLocationId = value;
+              });
+            },
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Campus location is required';
+        }
+
+        return null;
+      },
+    );
   }
 
   @override
@@ -289,9 +460,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
               TextFormField(
                 controller: _foodNameController,
                 textInputAction: TextInputAction.next,
+                enabled: !_isSubmitting,
                 decoration: const InputDecoration(
                   labelText: 'Food name',
-                  hintText: 'Pizza, donuts, sandwiches...',
+                  hintText: 'Leftover pizza, sandwiches, donuts...',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
@@ -303,37 +475,82 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 },
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _locationController,
-                textInputAction: TextInputAction.next,
+              DropdownButtonFormField<String>(
+                initialValue: _selectedFoodType,
                 decoration: const InputDecoration(
-                  labelText: 'Location',
-                  hintText: 'HEC 101, Library lobby...',
+                  labelText: 'Food type',
                   border: OutlineInputBorder(),
                 ),
+                items: _foodTypes.entries
+                    .map(
+                      (entry) => DropdownMenuItem<String>(
+                        value: entry.key,
+                        child: Text(entry.value),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _isSubmitting
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _selectedFoodType = value;
+                        });
+                      },
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Location is required';
+                  if (value == null || value.isEmpty) {
+                    return 'Food type is required';
                   }
 
                   return null;
                 },
               ),
               const SizedBox(height: 12),
+              _buildLocationField(),
+              const SizedBox(height: 12),
               TextFormField(
-                controller: _badgesController,
+                controller: _locationDetailController,
                 textInputAction: TextInputAction.done,
+                enabled: !_isSubmitting,
+                maxLength: 256,
                 decoration: const InputDecoration(
-                  labelText: 'Badges',
-                  hintText: 'pizza, dessert, vegan',
-                  helperText: 'Separate badges with commas',
+                  labelText: 'Specific location',
+                  hintText: 'Room 101, second floor lounge...',
+                  helperText: 'Optional',
                   border: OutlineInputBorder(),
                 ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Dietary tags',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: _dietaryTagLabels.entries
+                    .map(
+                      (entry) => FilterChip(
+                        label: Text(entry.value),
+                        selected: _selectedDietaryTags.contains(entry.key),
+                        onSelected: _isSubmitting
+                            ? null
+                            : (selected) {
+                                _toggleDietaryTag(
+                                  entry.key,
+                                  selected,
+                                );
+                              },
+                      ),
+                    )
+                    .toList(),
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: _isSubmitting ? null : _showPhotoOptions,
-                icon: const Icon(Icons.add_photo_alternate_outlined),
+                icon: const Icon(
+                  Icons.add_photo_alternate_outlined,
+                ),
                 label: Text(
                   _selectedImage == null ? 'Add photo' : 'Change photo',
                 ),
@@ -358,7 +575,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
               ],
               const SizedBox(height: 16),
               FilledButton.icon(
-                onPressed: _isSubmitting ? null : _submitPost,
+                onPressed: _isSubmitting ||
+                        _isLoadingLocations ||
+                        _locationsError != null
+                    ? null
+                    : _submitPost,
                 icon: _isSubmitting
                     ? const SizedBox(
                         width: 18,

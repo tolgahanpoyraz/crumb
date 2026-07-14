@@ -26,6 +26,23 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard> {
   bool _isVoting = false;
 
+  static const Map<String, String> _foodTypeLabels = {
+    'pizza': 'Pizza',
+    'meal': 'Meal',
+    'snacks': 'Snacks',
+    'baked-goods': 'Baked goods',
+    'drinks': 'Drinks',
+    'other': 'Other',
+  };
+
+  static const Map<String, String> _dietaryTagLabels = {
+    'vegetarian': 'Vegetarian',
+    'vegan': 'Vegan',
+    'halal': 'Halal',
+    'kosher': 'Kosher',
+    'gluten-free': 'Gluten-free',
+  };
+
   String? _buildImageUrl(String? imageKey) {
     if (imageKey == null || imageKey.trim().isEmpty) {
       return null;
@@ -33,16 +50,58 @@ class _PostCardState extends State<PostCard> {
 
     final trimmedKey = imageKey.trim();
 
-    // This also supports the backend returning a complete image URL later.
     if (trimmedKey.startsWith('http://') ||
         trimmedKey.startsWith('https://')) {
       return trimmedKey;
     }
 
-    final baseUrl = ApiConfig.imageBaseUrl.replaceAll(RegExp(r'/$'), '');
-    final normalizedKey = trimmedKey.replaceFirst(RegExp(r'^/'), '');
+    final baseUrl = ApiConfig.imageBaseUrl.replaceAll(
+      RegExp(r'/$'),
+      '',
+    );
+
+    final normalizedKey = trimmedKey.replaceFirst(
+      RegExp(r'^/'),
+      '',
+    );
 
     return '$baseUrl/$normalizedKey';
+  }
+
+  String _formatFoodType(String type) {
+    return _foodTypeLabels[type] ?? _capitalizeWords(type);
+  }
+
+  String _formatDietaryTag(String tag) {
+    return _dietaryTagLabels[tag] ?? _capitalizeWords(tag);
+  }
+
+  String _capitalizeWords(String value) {
+    return value
+        .replaceAll('-', ' ')
+        .split(' ')
+        .where((word) => word.isNotEmpty)
+        .map(
+          (word) =>
+              '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+        )
+        .join(' ');
+  }
+
+  String _locationName(FoodPost post) {
+    final name = post.location.name.trim();
+
+    if (name.isNotEmpty) {
+      return name;
+    }
+
+    final id = post.location.id.trim();
+
+    if (id.isNotEmpty) {
+      return _capitalizeWords(id);
+    }
+
+    return 'Unknown location';
   }
 
   Future<void> _vote(String type) async {
@@ -109,8 +168,10 @@ class _PostCardState extends State<PostCard> {
     final imageUrl = _buildImageUrl(post.imageKey);
 
     final confidenceText = post.confidence == null
-        ? 'unavailable'
+        ? 'Unavailable'
         : '${(post.confidence! * 100).round()}%';
+
+    final locationDetail = post.locationDetail?.trim();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -124,7 +185,11 @@ class _PostCardState extends State<PostCard> {
               width: double.infinity,
               height: 220,
               fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
+              loadingBuilder: (
+                context,
+                child,
+                loadingProgress,
+              ) {
                 if (loadingProgress == null) {
                   return child;
                 }
@@ -136,7 +201,11 @@ class _PostCardState extends State<PostCard> {
                   ),
                 );
               },
-              errorBuilder: (context, error, stackTrace) {
+              errorBuilder: (
+                context,
+                error,
+                stackTrace,
+              ) {
                 return Container(
                   width: double.infinity,
                   height: 220,
@@ -167,21 +236,64 @@ class _PostCardState extends State<PostCard> {
                   post.foodName,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: 4),
-                Row(
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
                   children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 18,
+                    Chip(
+                      avatar: const Icon(
+                        Icons.restaurant_outlined,
+                        size: 18,
+                      ),
+                      label: Text(
+                        _formatFoodType(post.type),
+                      ),
                     ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(post.location),
+                    ...post.dietaryTags.map(
+                      (tag) => Chip(
+                        label: Text(
+                          _formatDietaryTag(tag),
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text('Status: ${post.status}'),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 2),
+                      child: Icon(
+                        Icons.location_on_outlined,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _locationName(post),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (locationDetail != null &&
+                              locationDetail.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(locationDetail),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text('Status: ${_capitalizeWords(post.status)}'),
                 const SizedBox(height: 4),
                 Text('Confidence: $confidenceText'),
                 const SizedBox(height: 8),
@@ -189,36 +301,28 @@ class _PostCardState extends State<PostCard> {
                   'Still here: ${post.presentVotes} · '
                   'Gone: ${post.goneVotes}',
                 ),
-                if (post.badges.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: post.badges
-                        .map(
-                          (badge) => Chip(
-                            label: Text(badge),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed:
-                            _isVoting ? null : () => _vote('present'),
-                        icon: const Icon(Icons.check_circle_outline),
+                        onPressed: _isVoting
+                            ? null
+                            : () => _vote('present'),
+                        icon: const Icon(
+                          Icons.check_circle_outline,
+                        ),
                         label: const Text('Still here'),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _isVoting ? null : () => _vote('gone'),
-                        icon: const Icon(Icons.cancel_outlined),
+                        onPressed:
+                            _isVoting ? null : () => _vote('gone'),
+                        icon: const Icon(
+                          Icons.cancel_outlined,
+                        ),
                         label: const Text('Gone'),
                       ),
                     ),

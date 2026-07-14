@@ -28,22 +28,56 @@ class PostsApi {
     final postsJson = data['posts'] as List<dynamic>? ?? [];
 
     return postsJson
-        .map((postJson) => FoodPost.fromJson(postJson as Map<String, dynamic>))
+        .map(
+          (postJson) => FoodPost.fromJson(
+            Map<String, dynamic>.from(postJson as Map),
+          ),
+        )
+        .toList();
+  }
+
+  static Future<List<CampusLocation>> getLocations() async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/locations'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+
+    final data = _decodeResponse(response);
+    final locationsJson = data['locations'] as List<dynamic>? ?? [];
+
+    return locationsJson
+        .map(
+          (locationJson) => CampusLocation.fromJson(
+            Map<String, dynamic>.from(locationJson as Map),
+          ),
+        )
         .toList();
   }
 
   static Future<FoodPost> createPost({
     required String token,
     required String foodName,
-    required String location,
-    required List<String> badges,
+    required String type,
+    required String locationId,
+    required List<String> dietaryTags,
+    String? locationDetail,
     String? imageKey,
   }) async {
     final body = <String, dynamic>{
       'foodName': foodName.trim(),
-      'location': location.trim(),
-      'badges': badges,
+      'type': type,
+      'location': locationId,
+      'dietaryTags': dietaryTags,
     };
+
+    final trimmedLocationDetail = locationDetail?.trim();
+
+    if (trimmedLocationDetail != null &&
+        trimmedLocationDetail.isNotEmpty) {
+      body['locationDetail'] = trimmedLocationDetail;
+    }
 
     if (imageKey != null && imageKey.isNotEmpty) {
       body['imageKey'] = imageKey;
@@ -59,9 +93,18 @@ class PostsApi {
     );
 
     final data = _decodeResponse(response);
-    final postJson = data['post'] as Map<String, dynamic>;
+    final postValue = data['post'];
 
-    return FoodPost.fromJson(postJson);
+    if (postValue is! Map) {
+      throw PostsApiException(
+        'The server returned an invalid post response.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return FoodPost.fromJson(
+      Map<String, dynamic>.from(postValue),
+    );
   }
 
   static Future<void> votePost({
@@ -96,9 +139,19 @@ class PostsApi {
 
     final data = _decodeResponse(response);
 
+    final url = data['url']?.toString();
+    final key = data['key']?.toString();
+
+    if (url == null || url.isEmpty || key == null || key.isEmpty) {
+      throw PostsApiException(
+        'The server returned an invalid upload URL.',
+        statusCode: response.statusCode,
+      );
+    }
+
     return {
-      'url': data['url'].toString(),
-      'key': data['key'].toString(),
+      'url': url,
+      'key': key,
     };
   }
 
@@ -120,9 +173,10 @@ class PostsApi {
       body: bytes,
     );
 
-    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
+    if (uploadResponse.statusCode < 200 ||
+        uploadResponse.statusCode >= 300) {
       throw PostsApiException(
-        'Image upload failed',
+        'Image upload failed.',
         statusCode: uploadResponse.statusCode,
       );
     }
@@ -130,14 +184,30 @@ class PostsApi {
     return imageKey;
   }
 
-  static Map<String, dynamic> _decodeResponse(http.Response response) {
-    final data = response.body.isNotEmpty
-        ? jsonDecode(response.body) as Map<String, dynamic>
-        : <String, dynamic>{};
+  static Map<String, dynamic> _decodeResponse(
+    http.Response response,
+  ) {
+    Map<String, dynamic> data = {};
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    if (response.body.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is Map) {
+          data = Map<String, dynamic>.from(decoded);
+        }
+      } on FormatException {
+        throw PostsApiException(
+          'The server returned an invalid response.',
+          statusCode: response.statusCode,
+        );
+      }
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300) {
       throw PostsApiException(
-        data['error']?.toString() ?? 'Request failed',
+        data['error']?.toString() ?? 'Request failed.',
         statusCode: response.statusCode,
       );
     }
