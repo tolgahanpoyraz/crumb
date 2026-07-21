@@ -30,3 +30,11 @@ export async function votePost(req: Request, res: Response): Promise<void> {
     const result = await postService.vote(postId, userId, type);
     res.status(200).json(result);
 }
+
+export async function deletePost(req: Request, res: Response): Promise<void> {
+    const { id: userId } = req.auth as JwtPayload;
+    const { id: postId } = req.params as { id: string };
+
+    await postService.deletePost(postId, userId);
+    res.status(204).send();
+}

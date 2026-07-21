@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 
-import app from '../src/app.js';
+import { server } from './server.js';
 
 describe('GET /api/locations', () => {
     it('returns the campus location list', async () => {
-        const res = await request(app).get('/api/locations');
+        const res = await request(server).get('/api/locations');
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body.locations)).toBe(true);
         expect(res.body.locations.length).toBeGreaterThan(0);
