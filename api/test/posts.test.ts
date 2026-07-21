@@ -81,6 +81,13 @@ describe('POST /api/posts', () => {
         expect(new Date(res.body.post.expiresAt).getTime()).toBeGreaterThan(Date.now());
     });
 
+    it('includes the author display name on the created post', async () => {
+        const token = await authUser();
+        const res = await createPost(token);
+        expect(res.body.post.authorName).toBe('Testy');
+        expect(typeof res.body.post.author).toBe('string');
+    });
+
     it('returns 400 when a required field is missing', async () => {
         const token = await authUser();
         const res = await request(server)
@@ -160,6 +167,15 @@ describe('GET /api/posts', () => {
         expect(res.body.posts).toHaveLength(1);
         expect(res.body.posts[0].status).toBe('fresh');
         expect(res.body.posts[0].confidence).toBeGreaterThan(0.8);
+    });
+
+    it('surfaces the author display name while keeping author a bare id string', async () => {
+        const token = await authUser();
+        const { body } = await createPost(token);
+        const res = await request(server).get('/api/posts');
+        expect(res.body.posts[0].authorName).toBe('Testy');
+        expect(res.body.posts[0].author).toBe(body.post.author);
+        expect(typeof res.body.posts[0].author).toBe('string');
     });
 
     it('resolves the location id to name and coordinates', async () => {

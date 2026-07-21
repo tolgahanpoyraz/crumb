@@ -124,25 +124,35 @@ describe('POST /api/auth/login', () => {
 });
 
 describe('GET /api/auth/verify', () => {
-    it('verifies the account', async () => {
+    it('verifies the account and redirects to the web app with the display name', async () => {
         await register();
         const res = await request(server).get('/api/auth/verify').query({ token: lastTokenFrom(mockedVerifyEmail) });
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(302);
+        expect(res.headers.location).toContain('/email-verified?name=');
+        expect(res.headers.location).toContain(encodeURIComponent(DISPLAY_NAME));
         const user = await User.findOne({ email: EMAIL });
         expect(user?.verified).toBe(true);
     });
 
-    it('rejects an invalid token with 400', async () => {
+    it('redirects to the web app with an error for an invalid token', async () => {
         const res = await request(server).get('/api/auth/verify').query({ token: 'bogus' });
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(302);
+        expect(res.headers.location).toContain('/verify-email?error=invalid');
+    });
+
+    it('redirects to the web app with an error when the token is missing', async () => {
+        const res = await request(server).get('/api/auth/verify');
+        expect(res.status).toBe(302);
+        expect(res.headers.location).toContain('/verify-email?error=invalid');
     });
 
     it('consumes the token so a second use fails', async () => {
         await register();
         const token = lastTokenFrom(mockedVerifyEmail);
-        await request(server).get('/api/auth/verify').query({ token }).expect(200);
+        await request(server).get('/api/auth/verify').query({ token }).expect(302);
         const res = await request(server).get('/api/auth/verify').query({ token });
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(302);
+        expect(res.headers.location).toContain('/verify-email?error=invalid');
     });
 });
 

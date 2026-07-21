@@ -1,24 +1,46 @@
+import { Types } from 'mongoose';
 import { Post, type IPost, type VoteType } from '../models/Post.js';
 import { Vote } from '../models/Vote.js';
+import { User } from '../models/User.js';
 import { applyVote, decayE, sigmoid, statusFromConfidence, expiryFromE, E_INITIAL } from '../confidence.js';
 import { resolveLocation } from '../locations.js';
 import { AppError } from '../errors.js';
 
 type NewPost = Pick<IPost, 'foodName' | 'type' | 'dietaryTags' | 'location' | 'locationDetail' | 'imageKey'>;
 
+type PopulatedAuthor = { _id: Types.ObjectId; displayName: string; avatarKey?: string };
+
 export async function createPost(authorId: string, data: NewPost) {
     const now = new Date();
     const post = await Post.create({ ...data, author: authorId, lastUpdate: now, expiresAt: expiryFromE(E_INITIAL, now) });
-    return { ...post.toObject(), location: resolveLocation(post.location) };
+    const author = await User.findById(authorId).select('displayName avatarKey').lean();
+    return {
+        ...post.toObject(),
+        location: resolveLocation(post.location),
+        authorName: author?.displayName,
+        authorAvatarKey: author?.avatarKey,
+    };
 }
 
 export async function listFeed() {
     const now = new Date();
-    const posts = await Post.find({ expiresAt: { $gt: now } }).sort({ expiresAt: -1 }).lean();
+    const posts = await Post.find({ expiresAt: { $gt: now } })
+        .sort({ expiresAt: -1 })
+        .populate<{ author: PopulatedAuthor }>('author', 'displayName avatarKey')
+        .lean();
     return posts.map((post) => {
         const minutes = (now.getTime() - new Date(post.lastUpdate).getTime()) / 60000;
         const confidence = sigmoid(decayE(post.E, minutes));
-        return { ...post, location: resolveLocation(post.location), confidence, status: statusFromConfidence(confidence) };
+        const author = post.author;
+        return {
+            ...post,
+            author: author._id.toString(),
+            authorName: author.displayName,
+            authorAvatarKey: author.avatarKey,
+            location: resolveLocation(post.location),
+            confidence,
+            status: statusFromConfidence(confidence),
+        };
     });
 }
 

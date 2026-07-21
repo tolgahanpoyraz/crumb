@@ -37,23 +37,33 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
     res.status(200).json({ token, user: publicUser(user) });
 }
 
+// Verification links are opened straight from an email client, so this always
+// lands the browser on a web app page rather than returning JSON or raw HTML.
+function verifyErrorRedirect(reason: 'invalid' | 'server'): string {
+    const url = new URL('/verify-email', config.appUrl);
+    url.searchParams.set('error', reason);
+    return url.toString();
+}
+
 export async function verifyEmail(req: Request, res: Response): Promise<void> {
     const token = req.query.token as string | undefined;
     if (!token) {
-        res.status(400).send('Missing verification token');
+        res.redirect(302, verifyErrorRedirect('invalid'));
         return;
     }
 
     try {
-        await authService.verifyEmailToken(token);
-        res.status(200).send('<p>Email verified. You can now log in</p>');
+        const user = await authService.verifyEmailToken(token);
+        const url = new URL('/email-verified', config.appUrl);
+        url.searchParams.set('name', user.displayName);
+        res.redirect(302, url.toString());
     } catch (err) {
         if (err instanceof AppError) {
-            res.status(err.status).send('<p>Verification failed. This email is invalid or expired</p>');
+            res.redirect(302, verifyErrorRedirect('invalid'));
             return;
         }
         logger.error({ err }, 'Verify failed');
-        res.status(500).send('Something went wrong');
+        res.redirect(302, verifyErrorRedirect('server'));
     }
 }
 

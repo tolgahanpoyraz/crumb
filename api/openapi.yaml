@@ -123,8 +123,9 @@ paths:
       tags: [Auth]
       summary: Verify an email address
       description: >
-        Consumes the token from the verification email. Returns an HTML page
-        (this URL is opened directly from the email), not JSON.
+        Consumes the token from the verification email (this URL is opened directly
+        from the email client) and always responds with a 302 redirect to a page on
+        the web app — never JSON or HTML rendered by the API itself.
       operationId: verifyEmail
       security: []
       parameters:
@@ -135,24 +136,17 @@ paths:
             type: string
           description: Raw verification token from the email link
       responses:
-        '200':
-          description: Email verified
-          content:
-            text/html:
+        '302':
+          description: >
+            Redirects to the web app (`APP_URL`). On success:
+            `/email-verified?name=<displayName>`. On a missing, invalid, or expired
+            token, or an unexpected server error: `/verify-email?error=invalid` or
+            `/verify-email?error=server`.
+          headers:
+            Location:
               schema:
                 type: string
-        '400':
-          description: Missing, invalid, or expired token
-          content:
-            text/html:
-              schema:
-                type: string
-        '500':
-          description: Unexpected error
-          content:
-            text/html:
-              schema:
-                type: string
+              description: Destination URL on the web app
 
   /auth/resend-verification:
     post:
@@ -774,6 +768,18 @@ components:
           type: string
           description: Id of the user who posted it
           example: 665f1c2e9b1e8a0012a3b4c5
+        authorName:
+          type: string
+          description: >
+            Display name of the author, resolved on read. Optional; absent only if
+            the author record is unavailable.
+          example: Maya
+        authorAvatarKey:
+          type: string
+          description: >
+            S3 object key for the author's avatar, when they have one set. The
+            client builds the display URL from this, same as imageKey.
+          example: avatars/665f1c2e9b1e8a0012a3b4c5.jpg
         status:
           $ref: '#/components/schemas/PostStatus'
         confidence:

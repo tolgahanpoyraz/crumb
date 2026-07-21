@@ -18,7 +18,7 @@ async function issueVerificationToken(user: HydratedDocument<IUser>): Promise<vo
     user.verificationTokenExpires = new Date(Date.now() + VERIFICATION_TTL);
     await user.save();
     try {
-        await sendVerificationEmail(user.email, rawToken);
+        await sendVerificationEmail(user.email, rawToken, user.displayName);
     } catch (err) {
         logger.error({ err, email: user.email }, 'Failed to send verification email');
     }
@@ -30,7 +30,7 @@ async function issuePasswordResetToken(user: HydratedDocument<IUser>): Promise<v
     user.resetTokenExpires = new Date(Date.now() + RESET_TTL);
     await user.save();
     try {
-        await sendPasswordResetEmail(user.email, rawToken);
+        await sendPasswordResetEmail(user.email, rawToken, user.displayName);
     } catch (err) {
         logger.error({ err, email: user.email }, 'Failed to send password reset email');
     }
