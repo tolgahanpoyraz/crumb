@@ -1,134 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 abstract final class AppColors {
-  static const coral = Color(0xFFF76543);
-  static const coralDark = Color(0xFFD94E31);
-  static const coralSoft = Color(0xFFFFD9CA);
-  static const cream = Color(0xFFFFF6EF);
-  static const creamDeep = Color(0xFFF8E8DE);
-  static const cocoa = Color(0xFF49342E);
-  static const cocoaMuted = Color(0xFF9D7365);
-  static const mint = Color(0xFF49BC85);
-  static const mintSoft = Color(0xFFE4F7EF);
-  static const amber = Color(0xFFF2A13B);
-  static const amberSoft = Color(0xFFFFF1D9);
-  static const white = Color(0xFFFFFEFC);
-  static const outline = Color(0xFFEFD9CE);
-  static const shadow = Color(0x247E4534);
+  static const coral = Color(0xFFF0653F);
+  static const coralLight = Color(0xFFF98E6E);
+  static const appBg = Color(0xFFFFF3EC);
+  static const panelBg = Color(0xFFFFF8F3);
+  static const card = Color(0xFFFFFFFF);
+  static const textPrimary = Color(0xFF4A352D);
+  static const textSecondary = Color(0xFFA56A58);
+  static const textMuted = Color(0xFFB98A7A);
+  static const fieldLabel = Color(0xFFC19585);
+  static const placeholder = Color(0xFFC7A99E);
+  static const border = Color(0xFFF2E5DB);
+  static const inputBorder = Color(0xFFF0DCD0);
+  static const inactiveTab = Color(0xFFCDB0A4);
+  static const chevron = Color(0xFFD8B6A8);
+  static const warnBg = Color(0xFFFFF2E2);
+  static const warnBorder = Color(0xFFFFE0C2);
+  static const warnIcon = Color(0xFFD98A2F);
+  static const warnText = Color(0xFFA8701F);
   static const error = Color(0xFFC83F38);
 }
 
 abstract final class AppTheme {
   static const double pagePadding = 20;
-  static const double cardRadius = 28;
-  static const double controlRadius = 18;
+  static const double cardRadius = 20;
+  static const double sheetRadius = 28;
+  static const double controlRadius = 14;
 
   static ThemeData get light {
     const colorScheme = ColorScheme.light(
       primary: AppColors.coral,
       onPrimary: Colors.white,
-      secondary: AppColors.mint,
+      secondary: AppColors.coralLight,
       onSecondary: Colors.white,
-      surface: AppColors.white,
-      onSurface: AppColors.cocoa,
+      surface: AppColors.card,
+      onSurface: AppColors.textPrimary,
       error: AppColors.error,
       onError: Colors.white,
-      outline: AppColors.outline,
-      surfaceContainerHighest: AppColors.creamDeep,
+      outline: AppColors.border,
+      surfaceContainerHighest: AppColors.panelBg,
     );
 
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.cream,
+      scaffoldBackgroundColor: AppColors.appBg,
     );
 
     final roundedBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(controlRadius),
-      borderSide: const BorderSide(color: AppColors.outline),
+      borderSide: const BorderSide(color: AppColors.inputBorder),
     );
 
     return base.copyWith(
-      textTheme: base.textTheme
-          .apply(
-            bodyColor: AppColors.cocoa,
-            displayColor: AppColors.cocoa,
-          )
-          .copyWith(
-            displaySmall: const TextStyle(
-              color: AppColors.cocoa,
-              fontSize: 34,
-              height: 1.05,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -1.1,
-            ),
-            headlineMedium: const TextStyle(
-              color: AppColors.cocoa,
-              fontSize: 28,
-              height: 1.1,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.7,
-            ),
-            headlineSmall: const TextStyle(
-              color: AppColors.cocoa,
-              fontSize: 24,
-              height: 1.15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.4,
-            ),
-            titleLarge: const TextStyle(
-              color: AppColors.cocoa,
-              fontSize: 21,
-              height: 1.15,
-              fontWeight: FontWeight.w800,
-            ),
-            titleMedium: const TextStyle(
-              color: AppColors.cocoa,
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-            ),
-            bodyLarge: const TextStyle(
-              color: AppColors.cocoa,
-              fontSize: 16,
-              height: 1.45,
-              fontWeight: FontWeight.w500,
-            ),
-            bodyMedium: const TextStyle(
-              color: AppColors.cocoa,
-              fontSize: 14,
-              height: 1.4,
-              fontWeight: FontWeight.w500,
-            ),
-            labelLarge: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.cream,
-        foregroundColor: AppColors.cocoa,
+      textTheme: _buildTextTheme(base.textTheme),
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.appBg,
+        foregroundColor: AppColors.textPrimary,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
-          color: AppColors.cocoa,
-          fontSize: 22,
-          fontWeight: FontWeight.w900,
+        titleTextStyle: GoogleFonts.fredoka(
+          color: AppColors.textPrimary,
+          fontSize: 19,
+          fontWeight: FontWeight.w600,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.white,
+        fillColor: AppColors.card,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 18,
         ),
-        labelStyle: const TextStyle(
-          color: AppColors.cocoaMuted,
-          fontWeight: FontWeight.w700,
+        labelStyle: GoogleFonts.hankenGrotesk(
+          color: AppColors.fieldLabel,
+          fontWeight: FontWeight.w600,
         ),
-        hintStyle: const TextStyle(
-          color: Color(0xFFB6A49C),
+        hintStyle: GoogleFonts.hankenGrotesk(
+          color: AppColors.placeholder,
           fontWeight: FontWeight.w500,
         ),
         border: roundedBorder,
@@ -153,67 +105,67 @@ abstract final class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.coral,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: AppColors.coralSoft,
+          disabledBackgroundColor: AppColors.coralLight,
           disabledForegroundColor: Colors.white,
-          minimumSize: const Size(48, 56),
+          minimumSize: const Size(48, 54),
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(controlRadius),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
+          textStyle: GoogleFonts.fredoka(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.cocoa,
-          minimumSize: const Size(48, 54),
+          foregroundColor: AppColors.textPrimary,
+          minimumSize: const Size(48, 52),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          side: const BorderSide(color: AppColors.outline, width: 1.5),
+          side: const BorderSide(color: AppColors.inputBorder, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(controlRadius),
           ),
-          textStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
+          textStyle: GoogleFonts.fredoka(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.coral,
-          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          textStyle: GoogleFonts.fredoka(fontWeight: FontWeight.w600),
         ),
       ),
       chipTheme: base.chipTheme.copyWith(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.card,
         selectedColor: AppColors.coral,
-        disabledColor: AppColors.creamDeep,
-        labelStyle: const TextStyle(
-          color: AppColors.cocoa,
-          fontWeight: FontWeight.w800,
+        disabledColor: AppColors.border,
+        labelStyle: GoogleFonts.fredoka(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w600,
         ),
-        secondaryLabelStyle: const TextStyle(
+        secondaryLabelStyle: GoogleFonts.fredoka(
           color: Colors.white,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w600,
         ),
-        side: const BorderSide(color: AppColors.outline),
+        side: const BorderSide(color: AppColors.inputBorder),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(999),
         ),
       ),
-      dividerColor: AppColors.outline,
+      dividerColor: AppColors.border,
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.coral,
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.cocoa,
-        contentTextStyle: const TextStyle(
+        backgroundColor: AppColors.textPrimary,
+        contentTextStyle: GoogleFonts.hankenGrotesk(
           color: Colors.white,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -221,21 +173,85 @@ abstract final class AppTheme {
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.card,
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(sheetRadius)),
         ),
+      ),
+    );
+  }
+
+  static TextTheme _buildTextTheme(TextTheme base) {
+    final body = GoogleFonts.hankenGroteskTextTheme(base).apply(
+      bodyColor: AppColors.textPrimary,
+      displayColor: AppColors.textPrimary,
+    );
+
+    return body.copyWith(
+      displaySmall: GoogleFonts.fredoka(
+        color: AppColors.textPrimary,
+        fontSize: 26,
+        height: 1.1,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
+      ),
+      headlineMedium: GoogleFonts.fredoka(
+        color: AppColors.textPrimary,
+        fontSize: 22,
+        height: 1.15,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+      ),
+      headlineSmall: GoogleFonts.fredoka(
+        color: AppColors.textPrimary,
+        fontSize: 19,
+        height: 1.2,
+        fontWeight: FontWeight.w600,
+      ),
+      titleLarge: GoogleFonts.fredoka(
+        color: AppColors.textPrimary,
+        fontSize: 15.5,
+        height: 1.25,
+        fontWeight: FontWeight.w600,
+      ),
+      titleMedium: GoogleFonts.fredoka(
+        color: AppColors.textPrimary,
+        fontSize: 14.5,
+        fontWeight: FontWeight.w600,
+      ),
+      bodyLarge: GoogleFonts.hankenGrotesk(
+        color: AppColors.textPrimary,
+        fontSize: 14,
+        height: 1.45,
+        fontWeight: FontWeight.w500,
+      ),
+      bodyMedium: GoogleFonts.hankenGrotesk(
+        color: AppColors.textSecondary,
+        fontSize: 13,
+        height: 1.4,
+        fontWeight: FontWeight.w500,
+      ),
+      labelLarge: GoogleFonts.fredoka(
+        color: AppColors.textPrimary,
+        fontSize: 12.5,
+        fontWeight: FontWeight.w600,
+      ),
+      labelMedium: GoogleFonts.fredoka(
+        color: AppColors.textSecondary,
+        fontSize: 10.5,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
 
   static List<BoxShadow> get softShadow => const [
         BoxShadow(
-          color: AppColors.shadow,
-          blurRadius: 24,
-          offset: Offset(0, 10),
+          color: Color(0x80C4553B),
+          blurRadius: 28,
+          spreadRadius: -18,
+          offset: Offset(0, 13),
         ),
       ];
 }

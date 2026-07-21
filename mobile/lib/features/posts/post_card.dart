@@ -4,6 +4,7 @@ import '../../api/api_config.dart';
 import '../../api/posts_api.dart';
 import '../../models/food_post.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/freshness.dart';
 import '../auth/auth_session.dart';
 
 class PostCard extends StatefulWidget {
@@ -100,32 +101,6 @@ class _PostCardState extends State<PostCard> {
     return '${date.toLocal().month}/${date.toLocal().day}';
   }
 
-  Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'fresh':
-        return AppColors.mint;
-      case 'fading':
-      case 'likely':
-        return AppColors.amber;
-      case 'gone':
-        return AppColors.cocoaMuted;
-      default:
-        return AppColors.coral;
-    }
-  }
-
-  Color _statusBackground(String status) {
-    switch (status.toLowerCase()) {
-      case 'fresh':
-        return AppColors.mintSoft;
-      case 'fading':
-      case 'likely':
-        return AppColors.amberSoft;
-      default:
-        return AppColors.creamDeep;
-    }
-  }
-
   Future<void> _vote(String type) async {
     if (!widget.authSession.isLoggedIn) {
       widget.onRequireLogin();
@@ -172,14 +147,13 @@ class _PostCardState extends State<PostCard> {
     final post = widget.post;
     final imageUrl = _buildImageUrl(post.imageKey);
     final locationDetail = post.locationDetail?.trim();
-    final status = post.status.isEmpty ? 'fresh' : post.status;
-    final statusColor = _statusColor(status);
+    final freshness = FreshnessStatus.fromApi(post.status);
     final confidence = post.confidence?.clamp(0.0, 1.0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         boxShadow: AppTheme.softShadow,
       ),
@@ -199,7 +173,7 @@ class _PostCardState extends State<PostCard> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: _statusBackground(status),
+                    color: freshness.badgeBg,
                     borderRadius: BorderRadius.circular(999),
                     boxShadow: const [
                       BoxShadow(
@@ -216,16 +190,16 @@ class _PostCardState extends State<PostCard> {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: statusColor,
+                          color: freshness.dot,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 7),
                       Text(
-                        '${_capitalizeWords(status)}${confidence == null ? '' : ' · ${(confidence * 100).round()}%'}',
+                        freshness.label,
                         style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.w900,
+                          color: freshness.badgeText,
+                          fontWeight: FontWeight.w700,
                           fontSize: 12,
                         ),
                       ),
@@ -262,8 +236,8 @@ class _PostCardState extends State<PostCard> {
                             locationDetail,
                         ].join(' · '),
                         style: const TextStyle(
-                          color: AppColors.cocoaMuted,
-                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -271,9 +245,9 @@ class _PostCardState extends State<PostCard> {
                     Text(
                       _relativeTime(post.createdAt),
                       style: const TextStyle(
-                        color: AppColors.cocoaMuted,
+                        color: AppColors.textMuted,
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -298,35 +272,30 @@ class _PostCardState extends State<PostCard> {
                     children: [
                       const Text(
                         'Freshness',
-                        style: TextStyle(fontWeight: FontWeight.w900),
+                        style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                       const Spacer(),
                       Text(
                         '${(confidence * 100).round()}%',
                         style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.w900,
+                          color: freshness.badgeText,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: LinearProgressIndicator(
-                      value: confidence,
-                      minHeight: 8,
-                      color: statusColor,
-                      backgroundColor: AppColors.creamDeep,
-                    ),
+                  const SizedBox(height: 10),
+                  FreshnessMeter(
+                    confidence: confidence,
+                    status: freshness,
                   ),
                 ],
                 const SizedBox(height: 18),
                 const Text(
                   'Is it still there?',
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -336,8 +305,8 @@ class _PostCardState extends State<PostCard> {
                       child: FilledButton.icon(
                         onPressed: _isVoting ? null : () => _vote('present'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.mint,
-                          disabledBackgroundColor: AppColors.mintSoft,
+                          backgroundColor: FreshnessStatus.fresh.dot,
+                          disabledBackgroundColor: FreshnessStatus.fresh.badgeBg,
                         ),
                         icon: _isVoting
                             ? const SizedBox(
@@ -412,7 +381,7 @@ class _ImagePlaceholder extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.coralSoft, AppColors.creamDeep],
+          colors: [AppColors.coralLight, AppColors.border],
         ),
       ),
       alignment: Alignment.center,
@@ -426,14 +395,14 @@ class _ImagePlaceholder extends StatelessWidget {
                       ? Icons.broken_image_outlined
                       : Icons.lunch_dining_rounded,
                   size: 48,
-                  color: AppColors.cocoaMuted,
+                  color: AppColors.textMuted,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   isError ? 'Photo unavailable' : 'Shared campus food',
                   style: const TextStyle(
-                    color: AppColors.cocoaMuted,
-                    fontWeight: FontWeight.w800,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -453,9 +422,9 @@ class _PostTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.cream,
+        color: AppColors.appBg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.outline),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -467,9 +436,9 @@ class _PostTag extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: AppColors.cocoaMuted,
+              color: AppColors.textSecondary,
               fontSize: 12,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

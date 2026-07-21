@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -550,7 +548,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
         borderRadius: BorderRadius.circular(24),
         child: CustomPaint(
           painter: _DashedRoundedRectPainter(
-            color: const Color(0x8C9D7365),
+            color: const Color(0x8CB98A7A),
             radius: 24,
           ),
           child: Container(
@@ -562,7 +560,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               children: [
                 CircleAvatar(
                   radius: 29,
-                  backgroundColor: AppColors.coralSoft,
+                  backgroundColor: AppColors.coralLight,
                   child: Icon(
                     Icons.add_a_photo_outlined,
                     color: AppColors.coral,
@@ -582,7 +580,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   'Take a photo or choose from your library',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.cocoaMuted,
+                    color: AppColors.textSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -610,7 +608,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     width: 88,
                     height: 88,
                     decoration: const BoxDecoration(
-                      color: AppColors.coralSoft,
+                      color: AppColors.coralLight,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -630,7 +628,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     'You can browse without an account, but you need to log in before posting.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: AppColors.cocoaMuted,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -817,7 +815,7 @@ class _FormSectionLabel extends StatelessWidget {
     return Text(
       label,
       style: const TextStyle(
-        color: AppColors.cocoaMuted,
+        color: AppColors.textSecondary,
         fontSize: 12,
         fontWeight: FontWeight.w900,
         letterSpacing: 0.65,
@@ -840,7 +838,7 @@ class _PhotoAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.white,
+      color: AppColors.card,
       shape: const CircleBorder(),
       child: IconButton(
         tooltip: tooltip,

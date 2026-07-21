@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../api/auth_api.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/crumb_wordmark.dart';
+import '../../theme/freshness.dart';
 import 'auth_session.dart';
 
 class AccountPage extends StatefulWidget {
@@ -126,15 +128,7 @@ class _AccountPageState extends State<AccountPage> {
                 children: [
                   const Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                      'crumb',
-                      style: TextStyle(
-                        color: AppColors.coral,
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1.4,
-                      ),
-                    ),
+                    child: CrumbWordmark(fontSize: 34),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -146,7 +140,7 @@ class _AccountPageState extends State<AccountPage> {
                     _isLoginMode
                         ? 'Sign in to share food and help your campus waste less.'
                         : 'Create an account to post food and vote on what is still available.',
-                    style: const TextStyle(color: AppColors.cocoaMuted),
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 30),
                   if (!_isLoginMode) ...[
@@ -234,7 +228,7 @@ class _AccountPageState extends State<AccountPage> {
                         _isLoginMode
                             ? 'New to Crumb?'
                             : 'Already have an account?',
-                        style: const TextStyle(color: AppColors.cocoaMuted),
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
                       TextButton(
                         onPressed:
@@ -257,8 +251,8 @@ class _AccountPageState extends State<AccountPage> {
                     _FeedbackBanner(
                       message: _message!,
                       icon: Icons.check_circle_outline_rounded,
-                      foreground: AppColors.mint,
-                      background: AppColors.mintSoft,
+                      foreground: FreshnessStatus.fresh.badgeText,
+                      background: FreshnessStatus.fresh.badgeBg,
                     ),
                   ],
                   if (_error != null) ...[
@@ -325,18 +319,18 @@ class _SignedInAccount extends StatelessWidget {
                   width: 118,
                   height: 118,
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    color: AppColors.card,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.mint, width: 4),
+                    border: Border.all(color: AppColors.border, width: 4),
                     boxShadow: AppTheme.softShadow,
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     initials,
                     style: const TextStyle(
-                      color: AppColors.cocoa,
+                      color: AppColors.textPrimary,
                       fontSize: 34,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -352,7 +346,7 @@ class _SignedInAccount extends StatelessWidget {
                 email,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: AppColors.cocoaMuted,
+                  color: AppColors.textSecondary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -363,12 +357,12 @@ class _SignedInAccount extends StatelessWidget {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFFFF866A), AppColors.coral],
+                    colors: [AppColors.coralLight, AppColors.coral],
                   ),
                   borderRadius: BorderRadius.circular(AppTheme.cardRadius),
                   boxShadow: const [
                     BoxShadow(
-                      color: Color(0x3DF76543),
+                      color: Color(0x3DF0653F),
                       blurRadius: 24,
                       offset: Offset(0, 10),
                     ),
@@ -412,7 +406,7 @@ class _SignedInAccount extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: AppColors.card,
                   borderRadius: BorderRadius.circular(AppTheme.cardRadius),
                   boxShadow: AppTheme.softShadow,
                 ),
@@ -421,13 +415,13 @@ class _SignedInAccount extends StatelessWidget {
                     Container(
                       width: 46,
                       height: 46,
-                      decoration: const BoxDecoration(
-                        color: AppColors.mintSoft,
+                      decoration: BoxDecoration(
+                        color: FreshnessStatus.fresh.badgeBg,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.verified_user_outlined,
-                        color: AppColors.mint,
+                        color: FreshnessStatus.fresh.badgeText,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -443,7 +437,7 @@ class _SignedInAccount extends StatelessWidget {
                           Text(
                             'Your account is ready to post and vote.',
                             style: TextStyle(
-                              color: AppColors.cocoaMuted,
+                              color: AppColors.textSecondary,
                               fontSize: 13,
                             ),
                           ),
@@ -477,7 +471,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       label,
       style: const TextStyle(
-        color: AppColors.cocoaMuted,
+        color: AppColors.textSecondary,
         fontSize: 12,
         fontWeight: FontWeight.w900,
         letterSpacing: 0.6,

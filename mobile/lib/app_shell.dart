@@ -19,6 +19,7 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
+  // 0 = Map (feed), 2 = You (account). 1 (Drop) is an action, not a page.
   int _selectedIndex = 0;
   int _feedReloadVersion = 0;
 
@@ -34,7 +35,27 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
+  void _openDrop() {
+    if (!widget.authSession.isLoggedIn) {
+      _goToLogin();
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => CreatePostPage(
+          authSession: widget.authSession,
+          onRequireLogin: _goToLogin,
+          onPostCreated: _handlePostCreated,
+        ),
+      ),
+    );
+  }
+
   void _handlePostCreated() {
+    Navigator.of(context).pop();
+
     setState(() {
       _feedReloadVersion++;
       _selectedIndex = 0;
@@ -52,37 +73,24 @@ class _AppShellState extends State<AppShell> {
     return AnimatedBuilder(
       animation: widget.authSession,
       builder: (context, _) {
-        final pages = [
-          FeedPage(
-            key: ValueKey(_feedReloadVersion),
-            authSession: widget.authSession,
-            onRequireLogin: _goToLogin,
-          ),
-          CreatePostPage(
-            authSession: widget.authSession,
-            onRequireLogin: _goToLogin,
-            onPostCreated: _handlePostCreated,
-          ),
-          AccountPage(
-            authSession: widget.authSession,
-          ),
-        ];
-
         return Scaffold(
           body: IndexedStack(
-            index: _selectedIndex,
-            children: pages,
+            index: _selectedIndex == 0 ? 0 : 1,
+            children: [
+              FeedPage(
+                key: ValueKey(_feedReloadVersion),
+                authSession: widget.authSession,
+                onRequireLogin: _goToLogin,
+              ),
+              AccountPage(
+                authSession: widget.authSession,
+              ),
+            ],
           ),
           bottomNavigationBar: _CrumbNavigationBar(
             selectedIndex: _selectedIndex,
+            onDropSelected: _openDrop,
             onDestinationSelected: (index) {
-              final isPostTab = index == 1;
-
-              if (isPostTab && !widget.authSession.isLoggedIn) {
-                _goToLogin();
-                return;
-              }
-
               setState(() {
                 _selectedIndex = index;
               });
@@ -98,86 +106,41 @@ class _CrumbNavigationBar extends StatelessWidget {
   const _CrumbNavigationBar({
     required this.selectedIndex,
     required this.onDestinationSelected,
+    required this.onDropSelected,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
+  final VoidCallback onDropSelected;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.card,
         border: Border(
-          top: BorderSide(color: AppColors.creamDeep),
+          top: BorderSide(color: Color(0xFFF4E6DD)),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x147E4534),
-            blurRadius: 20,
-            offset: Offset(0, -4),
-          ),
-        ],
       ),
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 76,
+          height: 66,
           child: Row(
             children: [
               Expanded(
                 child: _NavigationItem(
-                  label: 'Food',
-                  icon: Icons.restaurant_outlined,
-                  selectedIcon: Icons.restaurant,
+                  label: 'Map',
+                  icon: Icons.map_outlined,
+                  selectedIcon: Icons.map_rounded,
                   selected: selectedIndex == 0,
                   onTap: () => onDestinationSelected(0),
                 ),
               ),
-              Expanded(
-                child: Semantics(
-                  button: true,
-                  selected: selectedIndex == 1,
-                  label: 'Post food',
-                  child: Center(
-                    child: Transform.translate(
-                      offset: const Offset(0, -10),
-                      child: Material(
-                        color: AppColors.coral,
-                        elevation: 0,
-                        shadowColor: AppColors.coral,
-                        borderRadius: BorderRadius.circular(21),
-                        child: InkWell(
-                          onTap: () => onDestinationSelected(1),
-                          borderRadius: BorderRadius.circular(21),
-                          child: Container(
-                            width: 62,
-                            height: 62,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(21),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x55F76543),
-                                  blurRadius: 18,
-                                  offset: Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.add_rounded,
-                              color: Colors.white,
-                              size: 34,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              Expanded(child: _DropItem(onTap: onDropSelected)),
               Expanded(
                 child: _NavigationItem(
-                  label: 'Account',
+                  label: 'You',
                   icon: Icons.person_outline_rounded,
                   selectedIcon: Icons.person_rounded,
                   selected: selectedIndex == 2,
@@ -209,7 +172,7 @@ class _NavigationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.coral : AppColors.cocoaMuted;
+    final color = selected ? AppColors.coral : AppColors.inactiveTab;
 
     return Semantics(
       button: true,
@@ -221,14 +184,59 @@ class _NavigationItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(selected ? selectedIcon : icon, color: color, size: 25),
+            Icon(selected ? selectedIcon : icon, color: color, size: 24),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 color: color,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DropItem extends StatelessWidget {
+  const _DropItem({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Drop free food',
+      child: InkResponse(
+        onTap: onTap,
+        radius: 34,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 30,
+              decoration: BoxDecoration(
+                color: AppColors.coral,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Drop',
+              style: TextStyle(
+                color: AppColors.coral,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../api/posts_api.dart';
 import '../../models/food_post.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/crumb_wordmark.dart';
 import '../auth/auth_session.dart';
 import 'post_card.dart';
 
@@ -59,15 +60,7 @@ class _FeedPageState extends State<FeedPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'crumb',
-                          style: TextStyle(
-                            color: AppColors.coral,
-                            fontSize: 29,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1.2,
-                          ),
-                        ),
+                        const CrumbWordmark(fontSize: 29),
                         const SizedBox(height: 18),
                         Text(
                           'Free food on campus,\n+right now',
@@ -152,7 +145,7 @@ class _HeaderAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(17),
         boxShadow: AppTheme.softShadow,
       ),
@@ -185,7 +178,7 @@ class _FeedLoading extends StatelessWidget {
         return Container(
           height: 330,
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: AppColors.card,
             borderRadius: BorderRadius.circular(AppTheme.cardRadius),
           ),
           child: const Center(child: CircularProgressIndicator()),
@@ -215,7 +208,7 @@ class _EmptyFeed extends StatelessWidget {
             height: 88,
             margin: const EdgeInsets.symmetric(horizontal: 86),
             decoration: const BoxDecoration(
-              color: AppColors.coralSoft,
+              color: AppColors.coralLight,
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -234,7 +227,7 @@ class _EmptyFeed extends StatelessWidget {
           const Text(
             'When someone shares free food on campus, it will show up here.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.cocoaMuted),
+            style: TextStyle(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 20),
           Center(
@@ -281,7 +274,7 @@ class _FeedError extends StatelessWidget {
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.cocoaMuted),
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 20),
         Center(
