@@ -159,9 +159,9 @@ const labelStyle: React.CSSProperties = {
 };
 
 const errorBannerStyle: React.CSSProperties = {
-  background: 'rgba(239, 68, 68, 0.12)',
-  border: '1px solid rgba(239, 68, 68, 0.25)',
-  color: 'var(--status-gone)',
+  background: 'var(--color-danger-bg)',
+  border: '1px solid var(--color-danger-border)',
+  color: 'var(--color-danger)',
   padding: '12px 16px',
   borderRadius: 'var(--border-radius-sm)',
   marginBottom: '20px',
@@ -172,9 +172,9 @@ const errorBannerStyle: React.CSSProperties = {
 };
 
 const successBannerStyle: React.CSSProperties = {
-  background: 'rgba(16, 185, 129, 0.12)',
-  border: '1px solid rgba(16, 185, 129, 0.25)',
-  color: 'var(--status-fresh)',
+  background: 'var(--color-success-bg)',
+  border: '1px solid var(--color-success-border)',
+  color: 'var(--color-success)',
   padding: '12px 16px',
   borderRadius: 'var(--border-radius-sm)',
   display: 'flex',

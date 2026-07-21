@@ -107,5 +107,5 @@ const footerStyle: React.CSSProperties = {
   padding: '24px 0',
   borderTop: '1px solid var(--border-light)',
   textAlign: 'center',
-  background: 'hsla(222, 47%, 5%, 0.5)',
+  background: 'var(--bg-surface)',
 };

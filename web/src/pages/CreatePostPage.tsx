@@ -314,7 +314,7 @@ const previewImageStyle: React.CSSProperties = {
 };
 
 const removeImageButtonStyle: React.CSSProperties = {
-  background: 'hsla(217, 30%, 90%, 0.1)',
+  background: 'var(--bg-chip)',
   border: '1px solid var(--border-light)',
   color: 'var(--text-primary)',
   padding: '4px 12px',
@@ -331,9 +331,9 @@ const buttonRowStyle: React.CSSProperties = {
 };
 
 const errorBannerStyle: React.CSSProperties = {
-  background: 'rgba(239, 68, 68, 0.12)',
-  border: '1px solid rgba(239, 68, 68, 0.25)',
-  color: 'var(--status-gone)',
+  background: 'var(--color-danger-bg)',
+  border: '1px solid var(--color-danger-border)',
+  color: 'var(--color-danger)',
   padding: '12px 16px',
   borderRadius: 'var(--border-radius-sm)',
   marginBottom: '20px',
@@ -344,9 +344,9 @@ const errorBannerStyle: React.CSSProperties = {
 };
 
 const statusBannerStyle: React.CSSProperties = {
-  background: 'hsla(265, 85%, 66%, 0.1)',
-  border: '1px solid hsla(265, 85%, 66%, 0.25)',
-  color: 'var(--color-secondary)',
+  background: 'var(--bg-chip)',
+  border: '1px solid var(--border-light)',
+  color: 'var(--text-secondary)',
   padding: '12px 16px',
   borderRadius: 'var(--border-radius-sm)',
   marginBottom: '20px',
@@ -360,7 +360,7 @@ const smallSpinnerStyle: React.CSSProperties = {
   width: '18px',
   height: '18px',
   border: '2px solid var(--border-light)',
-  borderTop: '2px solid var(--color-secondary)',
+  borderTop: '2px solid var(--color-primary)',
   borderRadius: '50%',
   animation: 'spin 1s linear infinite',
 };

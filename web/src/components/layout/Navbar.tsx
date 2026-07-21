@@ -61,10 +61,8 @@ const headerStyle: React.CSSProperties = {
   top: 0,
   zIndex: 100,
   width: '100%',
-  height: '70px',
-  background: 'hsla(222, 47%, 7%, 0.75)',
-  backdropFilter: 'var(--backdrop-blur)',
-  WebkitBackdropFilter: 'var(--backdrop-blur)',
+  height: '64px',
+  background: '#ffffff',
   borderBottom: '1px solid var(--border-light)',
   display: 'flex',
   alignItems: 'center',
@@ -88,8 +86,9 @@ const logoEmojiStyle: React.CSSProperties = {
 };
 
 const logoTextStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-display)',
   fontSize: '1.4rem',
-  fontWeight: 800,
+  fontWeight: 700,
   color: 'var(--text-primary)',
   letterSpacing: '-0.5px',
 };
@@ -112,12 +111,13 @@ const createPostButtonStyle: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '6px',
-  background: 'linear-gradient(135deg, var(--color-primary), hsl(12, 100%, 55%))',
+  background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
   color: '#fff',
+  fontFamily: 'var(--font-display)',
   fontWeight: 600,
   fontSize: '0.9rem',
   padding: '8px 16px',
-  borderRadius: '99px',
+  borderRadius: 'var(--border-radius-pill)',
   textDecoration: 'none',
   boxShadow: 'var(--shadow-glow)',
   transition: 'transform var(--transition-fast), filter var(--transition-fast)',
@@ -142,7 +142,7 @@ const avatarPlaceholderStyle: React.CSSProperties = {
   justifyContent: 'center',
   fontWeight: 700,
   fontSize: '0.9rem',
-  boxShadow: '0 0 10px rgba(168, 85, 247, 0.3)',
+  boxShadow: '0 0 10px rgba(240, 101, 63, 0.3)',
 };
 
 const emailTextStyle: React.CSSProperties = {

@@ -200,9 +200,9 @@ const avatarStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontWeight: 800,
+  fontWeight: 700,
   fontSize: '2.5rem',
-  boxShadow: '0 8px 30px rgba(168, 85, 247, 0.4)',
+  boxShadow: '0 8px 30px rgba(240, 101, 63, 0.35)',
 };
 
 const infoListStyle: React.CSSProperties = {
@@ -240,9 +240,9 @@ const infoValueStyleCode: React.CSSProperties = {
 const verifiedBadgeStyle: React.CSSProperties = {
   fontSize: '0.75rem',
   fontWeight: 700,
-  color: 'var(--status-fresh)',
-  background: 'var(--status-fresh-glow)',
-  border: '1px solid hsla(142, 76%, 45%, 0.3)',
+  color: 'var(--color-success)',
+  background: 'var(--color-success-bg)',
+  border: '1px solid var(--color-success-border)',
   padding: '3px 8px',
   borderRadius: '4px',
 };
@@ -250,9 +250,9 @@ const verifiedBadgeStyle: React.CSSProperties = {
 const unverifiedBadgeStyle: React.CSSProperties = {
   fontSize: '0.75rem',
   fontWeight: 700,
-  color: 'var(--status-likely)',
-  background: 'var(--status-likely-glow)',
-  border: '1px solid hsla(45, 93%, 47%, 0.3)',
+  color: 'var(--color-warning-text)',
+  background: 'var(--color-warning-bg)',
+  border: '1px solid var(--color-warning-border)',
   padding: '3px 8px',
   borderRadius: '4px',
 };
@@ -276,9 +276,9 @@ const labelStyle: React.CSSProperties = {
 };
 
 const errorBannerStyle: React.CSSProperties = {
-  background: 'rgba(239, 68, 68, 0.12)',
-  border: '1px solid rgba(239, 68, 68, 0.25)',
-  color: 'var(--status-gone)',
+  background: 'var(--color-danger-bg)',
+  border: '1px solid var(--color-danger-border)',
+  color: 'var(--color-danger)',
   padding: '12px 16px',
   borderRadius: 'var(--border-radius-sm)',
   marginBottom: '20px',
@@ -289,9 +289,9 @@ const errorBannerStyle: React.CSSProperties = {
 };
 
 const successBannerStyle: React.CSSProperties = {
-  background: 'rgba(16, 185, 129, 0.12)',
-  border: '1px solid rgba(16, 185, 129, 0.25)',
-  color: 'var(--status-fresh)',
+  background: 'var(--color-success-bg)',
+  border: '1px solid var(--color-success-border)',
+  color: 'var(--color-success)',
   padding: '12px 16px',
   borderRadius: 'var(--border-radius-sm)',
   marginBottom: '20px',

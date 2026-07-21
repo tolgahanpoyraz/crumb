@@ -179,10 +179,10 @@ export const FeedPage: React.FC = () => {
 
   const getStatusColor = (status: Post['status']) => {
     switch (status) {
-      case 'fresh': return 'var(--status-fresh)';
-      case 'likely': return 'var(--status-likely)';
-      case 'fading': return 'var(--status-fading)';
-      case 'gone': return 'var(--status-gone)';
+      case 'fresh': return 'var(--status-fresh-text)';
+      case 'likely': return 'var(--status-likely-text)';
+      case 'fading': return 'var(--status-fading-text)';
+      case 'gone': return 'var(--status-gone-text)';
       default: return 'var(--text-secondary)';
     }
   };
@@ -285,8 +285,8 @@ export const FeedPage: React.FC = () => {
                   className="btn-secondary"
                   style={{
                     ...voteButtonStyle,
-                    borderColor: 'rgba(16, 185, 129, 0.2)',
-                    background: 'rgba(16, 185, 129, 0.04)'
+                    borderColor: 'rgba(47, 157, 99, 0.3)',
+                    background: 'rgba(79, 183, 131, 0.08)'
                   }}
                 >
                   👍 Still Here
@@ -297,8 +297,8 @@ export const FeedPage: React.FC = () => {
                   className="btn-secondary"
                   style={{
                     ...voteButtonStyle,
-                    borderColor: 'rgba(239, 68, 68, 0.2)',
-                    background: 'rgba(239, 68, 68, 0.04)'
+                    borderColor: 'rgba(176, 154, 142, 0.35)',
+                    background: 'rgba(176, 154, 142, 0.08)'
                   }}
                 >
                   👎 All Gone
@@ -384,9 +384,9 @@ const searchIconStyle: React.CSSProperties = {
 };
 
 const apiNoticeBannerStyle: React.CSSProperties = {
-  background: 'hsla(45, 93%, 47%, 0.15)',
-  border: '1px solid hsla(45, 93%, 47%, 0.3)',
-  color: 'var(--status-likely)',
+  background: 'var(--color-warning-bg)',
+  border: '1px solid var(--color-warning-border)',
+  color: 'var(--color-warning-text)',
   padding: '12px 20px',
   borderRadius: 'var(--border-radius-sm)',
   marginBottom: '24px',
@@ -399,9 +399,9 @@ const apiNoticeBannerStyle: React.CSSProperties = {
 };
 
 const retryButtonStyle: React.CSSProperties = {
-  background: 'var(--status-likely)',
+  background: 'var(--color-warning-icon)',
   border: 'none',
-  color: '#000',
+  color: '#fff',
   padding: '4px 12px',
   borderRadius: '4px',
   fontWeight: '600',
@@ -489,7 +489,7 @@ const tagStyle: React.CSSProperties = {
   fontSize: '0.75rem',
   fontWeight: 600,
   color: 'var(--text-muted)',
-  background: 'hsla(217, 30%, 90%, 0.04)',
+  background: 'var(--bg-chip)',
   padding: '3px 8px',
   borderRadius: '4px',
   border: '1px solid var(--border-light)',
@@ -511,7 +511,7 @@ const confidenceHeaderStyle: React.CSSProperties = {
 const meterTrackStyle: React.CSSProperties = {
   height: '8px',
   width: '100%',
-  backgroundColor: 'var(--bg-input)',
+  backgroundColor: 'var(--bg-chip)',
   borderRadius: '99px',
   overflow: 'hidden',
   border: '1px solid var(--border-light)',
@@ -544,7 +544,7 @@ const voteButtonStyle: React.CSSProperties = {
 
 const voteErrorStyle: React.CSSProperties = {
   fontSize: '0.75rem',
-  color: 'var(--status-gone)',
+  color: 'var(--color-danger)',
   textAlign: 'center',
   marginTop: '8px',
   fontWeight: 500,

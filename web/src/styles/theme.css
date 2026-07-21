@@ -2,66 +2,95 @@
 
 :root {
   /* Font Family */
-  --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Fredoka', var(--font-sans);
 
-  /* Color Palette - Vibrant Dark Mode */
-  --bg-app: hsl(222, 47%, 7%);
-  --bg-surface: hsla(223, 47%, 14%, 0.45);
-  --bg-surface-hover: hsla(223, 47%, 20%, 0.6);
-  --bg-card: hsla(223, 47%, 12%, 0.65);
-  --bg-input: hsla(223, 47%, 8%, 0.6);
-  
-  --border-light: hsla(217, 30%, 90%, 0.08);
-  --border-focus: hsla(24, 100%, 60%, 0.4);
-  
+  /* Color Palette - Crumb (warm coral, campus food finder) */
+  --bg-app: #fff3ec;
+  --bg-surface: #fff8f3;
+  --bg-surface-hover: #fff2ec;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-chip: #f4ece3;
+  --coral-tint: #fff2ec;
+
+  --border-light: #f2e5db;
+  --border-input: #f0dcd0;
+  --border-focus: rgba(240, 101, 63, 0.35);
+
   /* Brand Accents */
-  --color-primary: hsl(24, 100%, 55%); /* Tasty Orange */
-  --color-primary-hover: hsl(24, 100%, 48%);
-  --color-primary-glow: hsla(24, 100%, 55%, 0.25);
-  
-  --color-secondary: hsl(265, 85%, 66%); /* Electric Violet */
-  --color-secondary-hover: hsl(265, 85%, 60%);
-  
+  --color-primary: #F0653F; /* Coral */
+  --color-primary-hover: #d8542f;
+  --color-primary-glow: rgba(240, 101, 63, 0.28);
+
+  --color-secondary: #F98E6E; /* Coral light */
+  --color-secondary-hover: #f2794f;
+
   /* Text Colors */
-  --text-primary: hsl(210, 40%, 98%);
-  --text-secondary: hsl(215, 20%, 75%);
-  --text-muted: hsl(215, 12%, 55%);
-  
-  /* Status Colors (Confidence bands) */
-  --status-fresh: hsl(142, 76%, 45%);      /* Emerald Green */
-  --status-fresh-glow: hsla(142, 76%, 45%, 0.2);
-  --status-likely: hsl(45, 93%, 47%);      /* Golden Amber */
-  --status-likely-glow: hsla(45, 93%, 47%, 0.2);
-  --status-fading: hsl(24, 100%, 55%);      /* Vibrant Orange */
-  --status-fading-glow: hsla(24, 100%, 55%, 0.2);
-  --status-gone: hsl(0, 84%, 60%);          /* Rose/Red */
-  --status-gone-glow: hsla(0, 84%, 60%, 0.2);
+  --text-primary: #4a352d;
+  --text-secondary: #a56a58;
+  --text-muted: #b98a7a;
+  --field-label: #c19585;
+  --placeholder: #c7a99e;
+  --ink: #3a2a24;
+
+  /* Freshness status ramp (confidence bands) */
+  --status-fresh: #4FB783;
+  --status-fresh-glow: #e7f6ee;
+  --status-fresh-text: #2f9d63;
+
+  --status-likely: #8bc23f;
+  --status-likely-glow: #f1f7e4;
+  --status-likely-text: #5e8019;
+
+  --status-fading: #e8943a;
+  --status-fading-glow: #fdefe0;
+  --status-fading-text: #b06a1c;
+
+  --status-gone: #c7b8ab;
+  --status-gone-glow: #f4eee6;
+  --status-gone-text: #8a7a6c;
+
+  /* System banners (form validation, uploads, expiry notices) */
+  --color-danger: #c1432a;
+  --color-danger-bg: #fdeae5;
+  --color-danger-border: #f6c9ba;
+
+  --color-success: var(--status-fresh-text);
+  --color-success-bg: var(--status-fresh-glow);
+  --color-success-border: rgba(79, 183, 131, 0.35);
+
+  --color-warning-bg: #fff2e2;
+  --color-warning-border: #ffe0c2;
+  --color-warning-icon: #d98a2f;
+  --color-warning-text: #a8701f;
 
   /* Shadows and Effects */
-  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 8px 30px -10px rgba(0, 0, 0, 0.7);
-  --shadow-glow: 0 0 20px -5px var(--color-primary-glow);
-  
+  --shadow-sm: 0 2px 8px -2px rgba(196, 85, 59, 0.18);
+  --shadow-md: 0 14px 28px -18px rgba(196, 85, 59, 0.5);
+  --shadow-md-hover: 0 20px 34px -16px rgba(196, 85, 59, 0.55);
+  --shadow-glow: 0 14px 26px -10px rgba(240, 101, 63, 0.7);
+  --shadow-modal: 0 40px 80px -24px rgba(58, 26, 18, 0.6);
+
   --backdrop-blur: blur(16px);
-  --border-radius-sm: 8px;
-  --border-radius-md: 16px;
-  --border-radius-lg: 24px;
-  
+  --border-radius-sm: 14px;
+  --border-radius-md: 20px;
+  --border-radius-lg: 22px;
+  --border-radius-pill: 999px;
+
   /* Layout constraints */
   --max-width-content: 1200px;
   --max-width-form: 480px;
-  
+
   /* Animations */
-  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.14s ease;
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Glassmorphism card preset utility */
+/* Card preset utility */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: var(--backdrop-blur);
-  -webkit-backdrop-filter: var(--backdrop-blur);
   border: 1px solid var(--border-light);
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-md);
@@ -69,18 +98,21 @@
 }
 
 .glass-panel:hover {
-  border-color: hsla(217, 30%, 90%, 0.15);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md-hover);
+  border-color: var(--border-input);
 }
 
-/* Glassmorphic Input presets */
+/* Input presets */
 .glass-input {
   width: 100%;
-  padding: 12px 16px;
+  height: 52px;
+  padding: 0 16px;
   background: var(--bg-input);
-  border: 1px solid var(--border-light);
+  border: 1.5px solid var(--border-input);
   border-radius: var(--border-radius-sm);
   color: var(--text-primary);
-  font-family: inherit;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -92,7 +124,7 @@
 }
 
 .glass-input::placeholder {
-  color: var(--text-muted);
+  color: var(--placeholder);
 }
 
 /* Primary Button Presets */
@@ -101,10 +133,10 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, var(--color-primary), hsl(12, 100%, 55%));
+  padding: 14px 26px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: #fff;
-  font-family: inherit;
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: 0.95rem;
   border: none;
@@ -115,9 +147,9 @@
 }
 
 .btn-primary:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px -2px var(--color-primary-glow);
+  filter: brightness(1.05);
+  transform: translateY(-2px);
+  box-shadow: 0 18px 30px -12px var(--color-primary-glow);
 }
 
 .btn-primary:active {
@@ -137,12 +169,12 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 24px;
-  background: hsla(217, 30%, 90%, 0.05);
-  border: 1px solid var(--border-light);
+  padding: 14px 26px;
+  background: #ffffff;
+  border: 1.5px solid var(--border-input);
   color: var(--text-primary);
-  font-family: inherit;
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-weight: 600;
   font-size: 0.95rem;
   border-radius: var(--border-radius-sm);
   cursor: pointer;
@@ -150,9 +182,9 @@
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: hsla(217, 30%, 90%, 0.1);
-  border-color: hsla(217, 30%, 90%, 0.2);
-  transform: translateY(-1px);
+  background: var(--coral-tint);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
 }
 
 .btn-secondary:active:not(:disabled) {
@@ -164,43 +196,57 @@
   cursor: not-allowed;
 }
 
-/* Glowing text and indicator presets */
-.glow-text-primary {
-  text-shadow: 0 0 12px var(--color-primary-glow);
-}
-
-/* Badge classes */
+/* Badge classes - pill with a status dot */
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 99px;
-  font-size: 0.75rem;
+  gap: 6px;
+  padding: 5px 12px 5px 9px;
+  border-radius: var(--border-radius-pill);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+}
+
+.badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
 }
 
 .badge-fresh {
   background: var(--status-fresh-glow);
-  color: var(--status-fresh);
-  border: 1px solid hsla(142, 76%, 45%, 0.3);
+  color: var(--status-fresh-text);
+}
+.badge-fresh::before {
+  background: var(--status-fresh);
 }
 
 .badge-likely {
   background: var(--status-likely-glow);
-  color: var(--status-likely);
-  border: 1px solid hsla(45, 93%, 47%, 0.3);
+  color: var(--status-likely-text);
+}
+.badge-likely::before {
+  background: var(--status-likely);
 }
 
 .badge-fading {
   background: var(--status-fading-glow);
-  color: var(--status-fading);
-  border: 1px solid hsla(24, 100%, 55%, 0.3);
+  color: var(--status-fading-text);
+}
+.badge-fading::before {
+  background: var(--status-fading);
 }
 
 .badge-gone {
   background: var(--status-gone-glow);
-  color: var(--status-gone);
-  border: 1px solid hsla(0, 84%, 60%, 0.3);
+  color: var(--status-gone-text);
+}
+.badge-gone::before {
+  background: var(--status-gone);
 }
