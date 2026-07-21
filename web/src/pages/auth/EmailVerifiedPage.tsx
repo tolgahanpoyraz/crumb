@@ -1,6 +1,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BrandPanel } from './BrandPanel';
 import { Icon } from '../../components/Icon';
+import munching from '../../assets/eugene/munching.png';
 
 // Landing page for a successful GET /auth/verify — the API 302-redirects here
 // with an optional ?name= for the greeting. Below the phone breakpoint this
@@ -20,6 +21,7 @@ export function EmailVerifiedPage() {
           showLogo
           showFoot
           align="between"
+          mascot={munching}
           headline={greeting}
           body="Your @ucf.edu is verified — that's how we keep the map students-only."
         />
@@ -46,8 +48,8 @@ export function EmailVerifiedPage() {
       <div className="verified-mobile">
         <div className="verified-mobile-band">
           <div className="brand-mascot sm">
-            <div className="slot" aria-hidden="true">
-              🐿️
+            <div className="slot">
+              <img className="mascot-img" src={munching} alt="Eugene the panda" />
             </div>
           </div>
           <div className="verified-mobile-greeting">{greeting}</div>

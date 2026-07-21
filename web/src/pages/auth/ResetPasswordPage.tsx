@@ -6,6 +6,7 @@ import { Icon } from '../../components/Icon';
 import { PasswordStrength } from '../../components/PasswordStrength';
 import { resetPassword } from '../../api/auth';
 import { useToast } from '../../components/Toast';
+import cheering from '../../assets/eugene/cheering.png';
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ export function ResetPasswordPage() {
       <BrandPanel
         variant="green"
         headlineSize={32}
+        mascot={cheering}
         headline={
           <>
             Almost there —
@@ -62,7 +64,7 @@ export function ResetPasswordPage() {
             pick a new one.
           </>
         }
-        body="Make it something fresh you'll actually remember."
+        body="Make it something fresh you'll actually remember. New password, same Eugene."
       />
       <div className="auth-form-side">
         <form className="auth-form" onSubmit={onSubmit}>

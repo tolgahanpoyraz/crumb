@@ -12,10 +12,11 @@ interface BrandPanelProps {
   align?: 'between' | 'center';
   mascotSize?: 'lg' | 'sm';
   headlineSize?: number;
+  mascot?: string;
 }
 
-// The gradient marketing panel shared by every auth screen. Nutmeg (the mascot)
-// art is TBD, so the circular slot shows a placeholder emoji.
+// The gradient marketing panel shared by every auth screen. Eugene (the panda
+// mascot) art fills the circular slot; each screen passes its own sticker.
 export function BrandPanel({
   variant,
   headline,
@@ -26,6 +27,7 @@ export function BrandPanel({
   align = 'center',
   mascotSize = 'lg',
   headlineSize,
+  mascot,
 }: BrandPanelProps) {
   const [openSpots, setOpenSpots] = useState<number | null>(null);
 
@@ -58,10 +60,10 @@ export function BrandPanel({
       </>
     );
 
-  const mascot = (
+  const mascotEl = (
     <div className={`brand-mascot ${mascotSize === 'sm' ? 'sm' : ''}`}>
-      <div className="slot" aria-hidden="true">
-        🐿️
+      <div className="slot">
+        {mascot && <img className="mascot-img" src={mascot} alt="Eugene the panda" />}
       </div>
     </div>
   );
@@ -80,7 +82,7 @@ export function BrandPanel({
       )}
 
       <div style={{ position: 'relative' }}>
-        {mascot}
+        {mascotEl}
         <div className="brand-headline" style={headlineSize ? { fontSize: headlineSize } : undefined}>
           {headline}
         </div>

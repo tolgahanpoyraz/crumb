@@ -4,6 +4,7 @@ import { FoodCard } from './FoodCard';
 import { FilterChips, type PrimaryFilter } from './FilterChips';
 import { Icon } from '../../components/Icon';
 import type { DietaryTag } from '../../api/types';
+import crying from '../../assets/eugene/crying.png';
 
 interface EmptyState {
   title: string;
@@ -83,11 +84,14 @@ export function FeedRail(props: FeedRailProps) {
         </div>
       ) : posts.length === 0 ? (
         <div className="empty-state">
-          <div className="icon">
-            <Icon name="crumb" size={40} stroke="#e0b7a6" strokeWidth={1.7} />
-          </div>
+          <img className="empty-mascot" src={crying} alt="Eugene the panda, hungry" />
           <div className="t">{props.empty.title}</div>
           <div className="b">{props.empty.body}</div>
+          <div className="b eugene-caption">
+            {props.mineView
+              ? 'Eugene ate the last one. Post your first drop?'
+              : 'Eugene ate the last one. Post the next drop?'}
+          </div>
           <button className="btn btn-primary" style={{ height: 46, padding: '0 20px', marginTop: 18 }} onClick={props.onPost}>
             <Icon name="plus" size={16} stroke="#fff" strokeWidth={2.6} />
             Post free food

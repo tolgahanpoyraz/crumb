@@ -4,6 +4,7 @@ import { Icon } from '../../components/Icon';
 import { openMailbox } from '../../lib/mailbox';
 import { useToast } from '../../components/Toast';
 import { resendVerification } from '../../api/auth';
+import starstruck from '../../assets/eugene/starstruck.png';
 
 // Also the landing page for a failed GET /auth/verify — the API 302-redirects
 // here with ?error=invalid (missing/invalid/expired token) or ?error=server.
@@ -34,6 +35,7 @@ export function VerifyEmailPage() {
         showLogo
         showFoot
         align="between"
+        mascot={starstruck}
         headline={
           linkError ? (
             <>

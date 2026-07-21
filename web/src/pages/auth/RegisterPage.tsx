@@ -6,6 +6,7 @@ import { Icon } from '../../components/Icon';
 import { PasswordStrength } from '../../components/PasswordStrength';
 import { register } from '../../api/auth';
 import { ApiError } from '../../api/client';
+import waving from '../../assets/eugene/waving.png';
 
 const EDU_RE = /@[^\s@]+\.edu$/i;
 
@@ -146,6 +147,7 @@ export function RegisterPage() {
         variant="green"
         mascotSize="sm"
         headlineSize={30}
+        mascot={waving}
         headline={
           <>
             Every meal shared
@@ -153,6 +155,7 @@ export function RegisterPage() {
             is one less wasted.
           </>
         }
+        body="Eugene's saving you a seat."
         features={[
           { icon: 'pin', text: 'See free food pinned across campus' },
           { icon: 'bell', text: 'Get pinged when fresh food drops nearby' },

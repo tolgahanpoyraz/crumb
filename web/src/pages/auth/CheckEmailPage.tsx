@@ -4,6 +4,7 @@ import { Icon } from '../../components/Icon';
 import { openMailbox } from '../../lib/mailbox';
 import { useToast } from '../../components/Toast';
 import { forgotPassword } from '../../api/auth';
+import starstruck from '../../assets/eugene/starstruck.png';
 
 export function CheckEmailPage() {
   const navigate = useNavigate();
@@ -30,7 +31,8 @@ export function CheckEmailPage() {
         showLogo
         showFoot
         align="between"
-        headline="Nutmeg's on it."
+        mascot={starstruck}
+        headline="Eugene's on it."
         body="The link expires in an hour, so don't wander too far."
       />
       <div className="auth-form-side">

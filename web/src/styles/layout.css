@@ -235,6 +235,17 @@
   line-height: 1.5;
   font-family: var(--font-body);
 }
+.empty-state .empty-mascot {
+  width: 108px;
+  height: 108px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.16));
+}
+.empty-state .eugene-caption {
+  margin-top: 5px;
+  font-size: 12px;
+  opacity: 0.72;
+}
 
 /* Map + detail wrapper */
 .map-detail {
@@ -943,18 +954,18 @@
   gap: 12px;
 }
 .brand-mascot {
-  width: 150px;
-  height: 150px;
+  width: 168px;
+  height: 168px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.16);
   padding: 6px;
-  margin-bottom: 26px;
+  margin-bottom: 24px;
   position: relative;
 }
 .brand-mascot.sm {
-  width: 130px;
-  height: 130px;
-  margin-bottom: 28px;
+  width: 144px;
+  height: 144px;
+  margin-bottom: 26px;
 }
 .brand-mascot .slot {
   width: 100%;
@@ -965,6 +976,12 @@
   justify-content: center;
   font-size: 44px;
   background: rgba(255, 255, 255, 0.08);
+}
+.brand-mascot .slot .mascot-img {
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.22));
 }
 .brand-headline {
   position: relative;

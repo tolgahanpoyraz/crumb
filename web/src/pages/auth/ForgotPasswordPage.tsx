@@ -5,6 +5,7 @@ import { Field } from '../../components/Field';
 import { Icon } from '../../components/Icon';
 import { forgotPassword } from '../../api/auth';
 import { isValidEmail } from '../../lib/validation';
+import silly from '../../assets/eugene/silly.png';
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ export function ForgotPasswordPage() {
         showLogo
         showFoot
         align="between"
+        mascot={silly}
         headline={
           <>
             Happens to
@@ -51,7 +53,7 @@ export function ForgotPasswordPage() {
             everyone.
           </>
         }
-        body="We'll send a link to reset it. You'll be back to snagging food in a minute."
+        body="We'll send a link to reset it. You'll be back to snagging food in a minute. Eugene forgets things too."
       />
       <div className="auth-form-side">
         <form className="auth-form" onSubmit={onSubmit}>

@@ -7,6 +7,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useToast } from '../../components/Toast';
 import { ApiError } from '../../api/client';
 import { resendVerification } from '../../api/auth';
+import winking from '../../assets/eugene/winking.png';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -54,6 +55,7 @@ export function LoginPage() {
         showLogo
         showFoot
         align="between"
+        mascot={winking}
         headline={
           <>
             Free food on campus,
@@ -61,7 +63,7 @@ export function LoginPage() {
             before it's gone.
           </>
         }
-        body="Students post leftover meals the moment they spot them. Grab what's near you."
+        body="Students post leftover meals the moment they spot them. Grab what's near you. Eugene already knows where the good stuff is."
       />
 
       <div className="auth-form-side">
