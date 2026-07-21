@@ -16,6 +16,10 @@ export function applyVote(E: number, type: VoteType): number {
     return E + VOTE_WEIGHT[type];
 }
 
+export function reverseVote(E: number, type: VoteType): number {
+    return E - VOTE_WEIGHT[type];
+}
+
 export function decayE(E: number, minutesElapsed: number): number {
     return E_PRIOR + (E - E_PRIOR) * Math.exp(-LAMBDA * minutesElapsed);
 }

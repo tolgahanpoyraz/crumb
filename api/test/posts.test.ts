@@ -123,12 +123,30 @@ describe('POST /api/posts/:id/vote', () => {
         expect(res.body.confidence).toBeGreaterThan(0.9);
     });
 
-    it('rejects a second vote from the same user with 409', async () => {
+    it('lets a user switch their vote to the other option', async () => {
         const token = await authUser();
         const { body } = await createPost(token);
         await vote(token, body.post._id, 'present').expect(200);
         const res = await vote(token, body.post._id, 'gone');
-        expect(res.status).toBe(409);
+        expect(res.status).toBe(200);
+        expect(res.body.tallies).toEqual({ present: 0, gone: 1 });
+        expect(res.body.status).toBe('fading');
+
+        const votes = (await Post.findById(body.post._id).select('+votes'))?.votes;
+        expect(votes).toHaveLength(1);
+        expect(votes?.[0]).toMatchObject({ type: 'gone' });
+    });
+
+    it('re-casting the same vote is a no-op', async () => {
+        const token = await authUser();
+        const { body } = await createPost(token);
+        await vote(token, body.post._id, 'present').expect(200);
+        const res = await vote(token, body.post._id, 'present');
+        expect(res.status).toBe(200);
+        expect(res.body.tallies).toEqual({ present: 1, gone: 0 });
+
+        const votes = (await Post.findById(body.post._id).select('+votes'))?.votes;
+        expect(votes).toHaveLength(1);
     });
 
     it('lets two different users each vote once', async () => {

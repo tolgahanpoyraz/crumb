@@ -16,7 +16,7 @@ export async function sendVerificationEmail(to: string, rawToken: string): Promi
 }
 
 export async function sendPasswordResetEmail(to: string, rawToken: string): Promise<void> {
-    const link = `${config.appUrl}/reset-password?token=${rawToken}`;   // needs frontend page
+    const link = `${config.webAppUrl}/reset-password?token=${rawToken}`;
 
     await sgMail.send({
         to,

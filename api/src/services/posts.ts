@@ -1,5 +1,5 @@
 import { Post, type IPost, type VoteType } from '../models/Post.js';
-import { applyVote, decayE, sigmoid, statusFromConfidence, expiryFromE, E_INITIAL } from '../confidence.js';
+import { applyVote, reverseVote, decayE, sigmoid, statusFromConfidence, expiryFromE, E_INITIAL } from '../confidence.js';
 import { AppError } from '../errors.js';
 
 type NewPost = Pick<IPost, 'foodName' | 'location' | 'badges' | 'imageKey'>;
@@ -27,15 +27,42 @@ export async function vote(postId: string, userId: string, type: VoteType) {
         throw new AppError(404, 'Post not found');
     }
 
-    if (post.votes.some((v) => v.user.toString() === userId)) {
-        throw new AppError(409, 'You have already voted on this post');
+    const existingVote = post.votes.find((v) => v.user.toString() === userId);
+    const minutes = (now.getTime() - post.lastUpdate.getTime()) / 60000;
+    const decayed = decayE(post.E, minutes);
+
+    // Re-selecting the same option is a no-op - nothing to change.
+    if (existingVote && existingVote.type === type) {
+        const confidence = sigmoid(decayed);
+        return { confidence, status: statusFromConfidence(confidence), tallies: post.tallies };
     }
 
-    const minutes = (now.getTime() - post.lastUpdate.getTime()) / 60000;
-    const E = applyVote(decayE(post.E, minutes), type);
+    const E = existingVote ? applyVote(reverseVote(decayed, existingVote.type), type) : applyVote(decayed, type);
     const confidence = sigmoid(E);
     const status = statusFromConfidence(confidence);
     const expiresAt = expiryFromE(E, now);
+
+    if (existingVote) {
+        // Switching an existing vote to the other option: move the tally over.
+        const tallies = {
+            present: post.tallies.present + (type === 'present' ? 1 : 0) - (existingVote.type === 'present' ? 1 : 0),
+            gone: post.tallies.gone + (type === 'gone' ? 1 : 0) - (existingVote.type === 'gone' ? 1 : 0),
+        };
+
+        const res = await Post.updateOne(
+            { _id: postId, 'votes.user': userId, 'votes.type': existingVote.type },
+            {
+                $set: { 'votes.$.type': type, 'votes.$.at': now, E, status, lastUpdate: now, expiresAt },
+                $inc: { [`tallies.${existingVote.type}`]: -1, [`tallies.${type}`]: 1 },
+            },
+        );
+        if (res.matchedCount === 0) {
+            throw new AppError(409, 'Your vote changed elsewhere, please try again');
+        }
+
+        return { confidence, status, tallies };
+    }
+
     const tallies = {
         present: post.tallies.present + (type === 'present' ? 1 : 0),
         gone: post.tallies.gone + (type === 'gone' ? 1 : 0),

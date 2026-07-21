@@ -56,6 +56,7 @@ export const FeedPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [voteErrors, setVoteErrors] = useState<Record<string, string>>({});
   const [votingIds, setVotingIds] = useState<Record<string, boolean>>({});
+  const [myVotes, setMyVotes] = useState<Record<string, 'present' | 'gone'>>({});
 
   useEffect(() => {
     fetchFeed();
@@ -92,21 +93,26 @@ export const FeedPage: React.FC = () => {
       return;
     }
 
+    // Re-selecting the vote already cast is a no-op - nothing changes.
+    if (myVotes[postId] === voteType) {
+      return;
+    }
+
     setVotingIds(prev => ({ ...prev, [postId]: true }));
     try {
       if (isFallback) {
         // Mock client vote update for demonstration
+        const previousVote = myVotes[postId];
         setPosts(prevPosts =>
           prevPosts.map(post => {
             if (post.id === postId) {
               const updatedTallies = { ...post.tallies };
-              if (voteType === 'present') {
-                updatedTallies.present += 1;
-              } else {
-                updatedTallies.gone += 1;
+              if (previousVote) {
+                updatedTallies[previousVote] -= 1;
               }
+              updatedTallies[voteType] += 1;
               const totalVotes = updatedTallies.present + updatedTallies.gone;
-              const newConfidence = updatedTallies.present / totalVotes;
+              const newConfidence = totalVotes > 0 ? updatedTallies.present / totalVotes : 0.5;
 
               let newStatus: Post['status'] = 'gone';
               if (newConfidence >= 0.8) newStatus = 'fresh';
@@ -123,6 +129,7 @@ export const FeedPage: React.FC = () => {
             return post;
           })
         );
+        setMyVotes(prev => ({ ...prev, [postId]: voteType }));
       } else {
         // Real backend call
         const response = await postService.votePost(postId, voteType);
@@ -139,6 +146,7 @@ export const FeedPage: React.FC = () => {
             return post;
           })
         );
+        setMyVotes(prev => ({ ...prev, [postId]: voteType }));
       }
     } catch (err: any) {
       setVoteErrors(prev => ({
@@ -286,7 +294,8 @@ export const FeedPage: React.FC = () => {
                   style={{
                     ...voteButtonStyle,
                     borderColor: 'rgba(47, 157, 99, 0.3)',
-                    background: 'rgba(79, 183, 131, 0.08)'
+                    background: myVotes[post.id] === 'present' ? 'rgba(47, 157, 99, 0.9)' : 'rgba(79, 183, 131, 0.08)',
+                    color: myVotes[post.id] === 'present' ? '#fff' : 'var(--text-primary)',
                   }}
                 >
                   👍 Still Here
@@ -298,7 +307,8 @@ export const FeedPage: React.FC = () => {
                   style={{
                     ...voteButtonStyle,
                     borderColor: 'rgba(176, 154, 142, 0.35)',
-                    background: 'rgba(176, 154, 142, 0.08)'
+                    background: myVotes[post.id] === 'gone' ? 'rgba(138, 122, 108, 0.9)' : 'rgba(176, 154, 142, 0.08)',
+                    color: myVotes[post.id] === 'gone' ? '#fff' : 'var(--text-primary)',
                   }}
                 >
                   👎 All Gone
