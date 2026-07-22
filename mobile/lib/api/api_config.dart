@@ -4,7 +4,7 @@ class ApiConfig {
   //               --dart-define=IMAGE_BASE_URL=https://my-bucket.s3.amazonaws.com
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://162.243.165.45:5000/api',
+    defaultValue: 'https://crumb.tolgahanpoyraz.com/api',
   );
 
   static const String imageBaseUrl = String.fromEnvironment(
