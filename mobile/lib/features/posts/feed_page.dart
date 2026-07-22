@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../api/posts_api.dart';
@@ -10,10 +11,11 @@ import '../../models/food_post.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/freshness.dart';
 import '../auth/auth_session.dart';
-import 'post_card.dart';
 import 'post_detail_sheet.dart';
+import 'post_format.dart';
+import 'post_widgets.dart';
 
-enum _FeedFilter { all, fresh, nearMe, dietary }
+enum _FeedFilter { all, fresh, nearMe }
 
 enum _FeedSort { freshest, newest, endingSoon }
 
@@ -45,10 +47,21 @@ class _FeedPageState extends State<FeedPage> {
   bool _loading = true;
   Object? _error;
   bool _mapReady = false;
+  LatLng? _myPosition;
+  bool _locating = false;
+
+  static const Map<String, String> _dietaryTagLabels = {
+    'vegetarian': 'Vegetarian',
+    'vegan': 'Vegan',
+    'halal': 'Halal',
+    'kosher': 'Kosher',
+    'gluten-free': 'Gluten-free',
+  };
 
   _FeedFilter _filter = _FeedFilter.all;
   _FeedSort _sort = _FeedSort.freshest;
   String _searchQuery = '';
+  final Set<String> _selectedDietaryTags = {};
 
   Timer? _pollTimer;
 
@@ -160,6 +173,119 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
+  Future<void> _onLocateTap() async {
+    if (_locating) {
+      return;
+    }
+    setState(() => _locating = true);
+    final found = await _acquirePosition();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _locating = false);
+
+    if (found && _myPosition != null) {
+      _mapController.move(_myPosition!, 16);
+    } else {
+      _fitToLocations();
+    }
+  }
+
+  Future<void> _onNearMeChipTap() async {
+    setState(() => _filter = _FeedFilter.nearMe);
+
+    if (_myPosition != null || _locating) {
+      return;
+    }
+
+    setState(() => _locating = true);
+    await _acquirePosition();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _locating = false);
+  }
+
+  /// Requests permission/service state, then fetches a position into
+  /// [_myPosition]. Shows the standard denial SnackBar itself on failure.
+  Future<bool> _acquirePosition() async {
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showLocationDeniedSnackBar(offerSettings: true);
+      return false;
+    }
+    if (permission == LocationPermission.denied) {
+      _showLocationDeniedSnackBar(offerSettings: false);
+      return false;
+    }
+
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      _showLocationDeniedSnackBar(offerSettings: false);
+      return false;
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+      if (!mounted) {
+        return false;
+      }
+      setState(() {
+        _myPosition = LatLng(position.latitude, position.longitude);
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _showLocationDeniedSnackBar({required bool offerSettings}) {
+    if (!mounted) {
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Location permission needed to find food near you',
+        ),
+        action: offerSettings
+            ? SnackBarAction(
+                label: 'Open settings',
+                onPressed: Geolocator.openAppSettings,
+              )
+            : null,
+      ),
+    );
+  }
+
+  /// Distance in miles from [_myPosition] to a post's location, or null when
+  /// either coordinate is unknown.
+  double? _distanceMilesTo(FoodPost post) {
+    final position = _myPosition;
+    final lat = post.location.latitude;
+    final lng = post.location.longitude;
+    if (position == null || lat == null || lng == null) {
+      return null;
+    }
+    final meters = Geolocator.distanceBetween(
+      position.latitude,
+      position.longitude,
+      lat,
+      lng,
+    );
+    return meters * 0.000621371;
+  }
+
   List<FoodPost> get _visiblePosts {
     var list = List<FoodPost>.from(_posts);
 
@@ -179,12 +305,29 @@ class _FeedPageState extends State<FeedPage> {
               status == FreshnessStatus.likely;
         }).toList();
         break;
-      case _FeedFilter.dietary:
-        list = list.where((post) => post.dietaryTags.isNotEmpty).toList();
-        break;
       case _FeedFilter.all:
       case _FeedFilter.nearMe:
         break;
+    }
+
+    if (_selectedDietaryTags.isNotEmpty) {
+      list = list
+          .where(
+            (post) => _selectedDietaryTags
+                .every((tag) => post.dietaryTags.contains(tag)),
+          )
+          .toList();
+    }
+
+    if (_filter == _FeedFilter.nearMe && _myPosition != null) {
+      // "Near me" sorts the already-filtered list by distance ascending —
+      // it never excludes posts, matching the web dashboard's behavior.
+      list.sort((a, b) {
+        final aDist = _distanceMilesTo(a) ?? double.infinity;
+        final bDist = _distanceMilesTo(b) ?? double.infinity;
+        return aDist.compareTo(bDist);
+      });
+      return list;
     }
 
     switch (_sort) {
@@ -348,6 +491,19 @@ class _FeedPageState extends State<FeedPage> {
       );
     });
 
+    final myPosition = _myPosition;
+    if (myPosition != null) {
+      markers.add(
+        Marker(
+          point: myPosition,
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          child: const _MeMarker(),
+        ),
+      );
+    }
+
     return markers;
   }
 
@@ -359,7 +515,7 @@ class _FeedPageState extends State<FeedPage> {
           children: [
             Expanded(child: _buildSearchBar()),
             const SizedBox(width: 10),
-            _LocateButton(onTap: _fitToLocations),
+            _LocateButton(onTap: _onLocateTap),
           ],
         ),
         const SizedBox(height: 10),
@@ -445,16 +601,104 @@ class _FeedPageState extends State<FeedPage> {
           _FilterChip(
             label: 'Near me',
             selected: _filter == _FeedFilter.nearMe,
-            onTap: () => setState(() => _filter = _FeedFilter.nearMe),
+            onTap: _onNearMeChipTap,
           ),
           const SizedBox(width: 8),
           _FilterChip(
-            label: 'Dietary',
-            selected: _filter == _FeedFilter.dietary,
-            onTap: () => setState(() => _filter = _FeedFilter.dietary),
+            label: _selectedDietaryTags.isEmpty
+                ? 'Dietary'
+                : 'Dietary · ${_selectedDietaryTags.length}',
+            selected: _selectedDietaryTags.isNotEmpty,
+            onTap: _openDietarySheet,
           ),
         ],
       ),
+    );
+  }
+
+  void _openDietarySheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppTheme.sheetRadius)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            void toggleTag(String tag, bool selected) {
+              setState(() {
+                if (selected) {
+                  _selectedDietaryTags.add(tag);
+                } else {
+                  _selectedDietaryTags.remove(tag);
+                }
+              });
+              setSheetState(() {});
+            }
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Dietary', style: Theme.of(context).textTheme.headlineSmall),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _dietaryTagLabels.entries.map((entry) {
+                      return FilterChip(
+                        label: Text(entry.value),
+                        selected: _selectedDietaryTags.contains(entry.key),
+                        onSelected: (selected) => toggleTag(entry.key, selected),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Dietary tags come from whoever posted — double-check '
+                    'yourself if you have allergies.',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() => _selectedDietaryTags.clear());
+                            setSheetState(() {});
+                          },
+                          child: const Text('Clear'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          child: const Text('Done'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -532,7 +776,11 @@ class _FeedPageState extends State<FeedPage> {
           ),
           const SizedBox(height: 14),
           for (final post in posts) ...[
-            PostRow(post: post, onTap: () => _openDetail(post)),
+            _FeedPostRow(
+              post: post,
+              distanceMiles: _distanceMilesTo(post),
+              onTap: () => _openDetail(post),
+            ),
             const SizedBox(height: 10),
           ],
         ],
@@ -624,6 +872,131 @@ class _MapPin extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// "You are here" map dot: coral fill, white ring, soft shadow — smaller
+/// and simpler than the teardrop post pins, matching the web app's
+/// `.map-me` / `.mbx-me` marker style.
+class _MeMarker extends StatelessWidget {
+  const _MeMarker();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        color: AppColors.coral,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 4),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.coral.withValues(alpha: 0.45),
+            blurRadius: 16,
+            spreadRadius: -2,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact "Hot & fresh right now" list row: thumbnail, status badge, title,
+/// "location · X.X mi · time" meta (distance shown when [distanceMiles] is
+/// known), chevron. Tapping opens the detail sheet — voting lives there.
+class _FeedPostRow extends StatelessWidget {
+  const _FeedPostRow({
+    required this.post,
+    required this.distanceMiles,
+    required this.onTap,
+  });
+
+  final FoodPost post;
+  final double? distanceMiles;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final freshness = FreshnessStatus.fromApi(post.status);
+    final imageUrl = PostFormat.imageUrl(post.imageKey);
+
+    return Semantics(
+      button: true,
+      label: '${post.foodName}, ${freshness.label}',
+      child: Material(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                PostThumbnail(
+                  imageUrl: imageUrl,
+                  width: 60,
+                  height: 60,
+                  radius: 13,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: StatusBadge(status: freshness, fontSize: 10),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        post.foodName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _meta(post),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.chevron,
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _meta(FoodPost post) {
+    final distance = distanceMiles;
+    return [
+      PostFormat.locationName(post),
+      if (distance != null) '${distance.toStringAsFixed(1)} mi',
+      PostFormat.relativeTime(post.createdAt),
+    ].join(' · ');
   }
 }
 

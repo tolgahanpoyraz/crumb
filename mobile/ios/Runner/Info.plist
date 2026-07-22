@@ -44,6 +44,9 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app lets you select a photo of available free food.</string>
 
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Crumb shows free food near you and how far away it is.</string>
+
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
