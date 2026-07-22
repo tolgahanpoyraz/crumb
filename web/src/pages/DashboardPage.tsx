@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TopBar } from '../features/dashboard/TopBar';
 import { FeedRail } from '../features/dashboard/FeedRail';
 import { CampusMap } from '../features/dashboard/CampusMap';
@@ -6,6 +6,7 @@ import { MapboxMap } from '../features/dashboard/MapboxMap';
 import { DetailPanel } from '../features/dashboard/DetailPanel';
 import { PostFoodModal } from '../features/post/PostFoodModal';
 import { SettingsModal } from '../features/settings/SettingsModal';
+import { EugeneCelebration } from '../components/EugeneCelebration';
 import type { PrimaryFilter } from '../features/dashboard/FilterChips';
 import { useFeed } from '../features/feed/FeedContext';
 import { useAuth } from '../auth/AuthContext';
@@ -29,6 +30,8 @@ export function DashboardPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [postOpen, setPostOpen] = useState(false);
   const [settings, setSettings] = useState<{ open: boolean; tab: 'profile' | 'security' }>({ open: false, tab: 'profile' });
+  const [celebrate, setCelebrate] = useState<{ key: number; message: string } | null>(null);
+  const dismissCelebrate = useCallback(() => setCelebrate(null), []);
 
   const uid = user!.id;
   const mineView = filter === 'mine';
@@ -198,6 +201,9 @@ export function DashboardPage() {
               onDelete={onDelete}
             />
           )}
+          {celebrate && (
+            <EugeneCelebration key={celebrate.key} message={celebrate.message} onDone={dismissCelebrate} />
+          )}
         </div>
       </main>
 
@@ -209,7 +215,7 @@ export function DashboardPage() {
           onCreate={createPost}
           onCreated={(post) => {
             setSelectedId(post._id);
-            toast.success('Posted! Your drop is live.');
+            setCelebrate({ key: Date.now(), message: 'Drop posted! Eugene salutes you.' });
           }}
           onError={() => {}}
           onNotice={(msg) => toast.show(msg)}

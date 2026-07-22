@@ -3,8 +3,8 @@ import type { Post, VoteType } from '../../api/types';
 import { FoodCard } from './FoodCard';
 import { FilterChips, type PrimaryFilter } from './FilterChips';
 import { Icon } from '../../components/Icon';
+import { EugeneCycle } from '../../components/EugeneCycle';
 import type { DietaryTag } from '../../api/types';
-import crying from '../../assets/eugene/crying.png';
 
 interface EmptyState {
   title: string;
@@ -84,7 +84,7 @@ export function FeedRail(props: FeedRailProps) {
         </div>
       ) : posts.length === 0 ? (
         <div className="empty-state">
-          <img className="empty-mascot" src={crying} alt="Eugene the panda, hungry" />
+          <EugeneCycle imgClassName="empty-mascot" start="crying" />
           <div className="t">{props.empty.title}</div>
           <div className="b">{props.empty.body}</div>
           <div className="b eugene-caption">

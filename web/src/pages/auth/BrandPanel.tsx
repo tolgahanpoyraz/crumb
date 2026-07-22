@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Icon } from '../../components/Icon';
+import { EugeneCycle } from '../../components/EugeneCycle';
 import { getFeed } from '../../api/posts';
 
 interface BrandPanelProps {
@@ -13,6 +14,7 @@ interface BrandPanelProps {
   mascotSize?: 'lg' | 'sm';
   headlineSize?: number;
   mascot?: string;
+  interactive?: boolean;
 }
 
 // The gradient marketing panel shared by every auth screen. Eugene (the panda
@@ -28,6 +30,7 @@ export function BrandPanel({
   mascotSize = 'lg',
   headlineSize,
   mascot,
+  interactive = false,
 }: BrandPanelProps) {
   const [openSpots, setOpenSpots] = useState<number | null>(null);
 
@@ -63,7 +66,11 @@ export function BrandPanel({
   const mascotEl = (
     <div className={`brand-mascot ${mascotSize === 'sm' ? 'sm' : ''}`}>
       <div className="slot">
-        {mascot && <img className="mascot-img" src={mascot} alt="Eugene the panda" />}
+        {interactive ? (
+          <EugeneCycle imgClassName="mascot-img" start="winking" />
+        ) : (
+          mascot && <img className="mascot-img" src={mascot} alt="Eugene the panda" />
+        )}
       </div>
     </div>
   );

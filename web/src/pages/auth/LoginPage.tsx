@@ -55,6 +55,7 @@ export function LoginPage() {
         showLogo
         showFoot
         align="between"
+        interactive
         mascot={winking}
         headline={
           <>
