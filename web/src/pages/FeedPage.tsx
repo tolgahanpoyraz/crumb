@@ -219,7 +219,7 @@ export const FeedPage: React.FC = () => {
     feedBody = (
       <div style={emptyStateCardStyle} className="glass-panel">
         <span style={{ fontSize: '3rem' }}>🍃</span>
-        <h3 style={{ marginTop: '16px', marginBottom: '8px' }}>No Food Spotted</h3>
+        <h2 style={{ marginTop: '16px', marginBottom: '8px', fontSize: '1.35rem' }}>No Food Spotted</h2>
         <p>We couldn't find any active reports matching your search. Why not report some?</p>
       </div>
     );
@@ -244,7 +244,7 @@ export const FeedPage: React.FC = () => {
 
               {/* Title & Location */}
               <div style={{ flex: 1, margin: '12px 0' }}>
-                <h3 style={foodTitleStyle}>{post.foodName}</h3>
+                <h2 style={foodTitleStyle}>{post.foodName}</h2>
                 <p style={locationStyle}>📍 {typeof post.location === 'string' ? post.location : post.location?.name}</p>
               </div>
 

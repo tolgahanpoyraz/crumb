@@ -135,7 +135,7 @@ const labelStyle: React.CSSProperties = {
 const forgotPasswordLinkStyle: React.CSSProperties = {
   fontSize: '0.8rem',
   fontWeight: 500,
-  color: 'var(--color-primary)',
+  color: 'var(--color-primary-text)',
 };
 
 const errorBannerStyle: React.CSSProperties = {

@@ -26,10 +26,16 @@
   --color-secondary: #F98E6E; /* Coral light */
   --color-secondary-hover: #f2794f;
 
+  /* Coral is too light to hit 4.5:1 as small text on a light background -
+     used for links instead of --color-primary, which stays untouched for
+     buttons/badges/gradients where it's paired with a light background. */
+  --color-primary-text: #CD3910;
+  --color-primary-text-hover: #B5320E;
+
   /* Text Colors */
   --text-primary: #4a352d;
-  --text-secondary: #a56a58;
-  --text-muted: #b98a7a;
+  --text-secondary: #95604F;
+  --text-muted: #996351;
   --field-label: #c19585;
   --placeholder: #c7a99e;
   --ink: #3a2a24;
