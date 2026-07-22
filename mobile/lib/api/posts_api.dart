@@ -15,6 +15,38 @@ class PostsApiException implements Exception {
   String toString() => message;
 }
 
+class VoteResponse {
+  const VoteResponse({
+    required this.confidence,
+    required this.status,
+    required this.presentVotes,
+    required this.goneVotes,
+  });
+
+  final double? confidence;
+  final String status;
+  final int presentVotes;
+  final int goneVotes;
+
+  factory VoteResponse.fromJson(Map<String, dynamic> json) {
+    final talliesValue = json['tallies'];
+    final tallies = talliesValue is Map
+        ? Map<String, dynamic>.from(talliesValue)
+        : <String, dynamic>{};
+
+    return VoteResponse(
+      confidence: json['confidence'] is num
+          ? (json['confidence'] as num).toDouble()
+          : null,
+      status: (json['status'] ?? 'fresh').toString(),
+      presentVotes:
+          tallies['present'] is num ? (tallies['present'] as num).toInt() : 0,
+      goneVotes:
+          tallies['gone'] is num ? (tallies['gone'] as num).toInt() : 0,
+    );
+  }
+}
+
 class PostsApi {
   static Future<List<FoodPost>> getFeed() async {
     final response = await http.get(
@@ -107,7 +139,7 @@ class PostsApi {
     );
   }
 
-  static Future<void> votePost({
+  static Future<VoteResponse> votePost({
     required String token,
     required String postId,
     required String type,
@@ -121,6 +153,21 @@ class PostsApi {
       body: jsonEncode({
         'type': type,
       }),
+    );
+
+    return VoteResponse.fromJson(_decodeResponse(response));
+  }
+
+  static Future<void> deletePost({
+    required String token,
+    required String postId,
+  }) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/posts/$postId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
     );
 
     _decodeResponse(response);

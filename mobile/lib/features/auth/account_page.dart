@@ -1,463 +1,75 @@
 import 'package:flutter/material.dart';
 
-import '../../api/auth_api.dart';
+import '../../api/api_config.dart';
+import '../../api/posts_api.dart';
+import '../../models/food_post.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/freshness.dart';
+import '../posts/post_detail_sheet.dart';
 import 'auth_session.dart';
+import 'auth_ui.dart';
+import 'change_password_page.dart';
+import 'edit_profile_page.dart';
+import 'login_page.dart';
 
-class AccountPage extends StatefulWidget {
-  const AccountPage({
-    super.key,
-    required this.authSession,
-  });
+class AccountPage extends StatelessWidget {
+  const AccountPage({super.key, required this.authSession});
 
   final AuthSession authSession;
 
   @override
-  State<AccountPage> createState() => _AccountPageState();
-}
-
-class _AccountPageState extends State<AccountPage> {
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-
-  bool _isLoginMode = true;
-  bool _obscurePassword = true;
-  String? _message;
-  String? _error;
-
-  @override
-  void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    setState(() {
-      _message = null;
-      _error = null;
-    });
-
-    try {
-      if (_isLoginMode) {
-        await widget.authSession.login(
-          email: _emailController.text,
-          password: _passwordController.text,
-        );
-
-        setState(() => _message = 'Logged in successfully.');
-      } else {
-        final message = await widget.authSession.register(
-          firstName: _firstNameController.text,
-          lastName: _lastNameController.text,
-          email: _emailController.text,
-          password: _passwordController.text,
-        );
-
-        setState(() {
-          _message = message;
-          _isLoginMode = true;
-        });
-      }
-    } on AuthApiException catch (error) {
-      setState(() => _error = error.message);
-    } catch (_) {
-      setState(() => _error = 'Something went wrong. Please try again.');
-    }
-  }
-
-  Future<void> _resendVerification() async {
-    setState(() {
-      _message = null;
-      _error = null;
-    });
-
-    try {
-      final message = await widget.authSession.resendVerification(
-        email: _emailController.text,
-      );
-      setState(() => _message = message);
-    } on AuthApiException catch (error) {
-      setState(() => _error = error.message);
-    } catch (_) {
-      setState(() => _error = 'Could not resend verification email.');
-    }
-  }
-
-  void _toggleMode() {
-    setState(() {
-      _isLoginMode = !_isLoginMode;
-      _message = null;
-      _error = null;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.authSession,
+      animation: authSession,
       builder: (context, _) {
-        final user = widget.authSession.user;
-
-        if (widget.authSession.isLoggedIn && user != null) {
-          return _SignedInAccount(
-            user: user,
-            isLoading: widget.authSession.isLoading,
-            onLogout: widget.authSession.logout,
-          );
+        if (authSession.isLoggedIn) {
+          return _SignedInAccount(authSession: authSession);
         }
 
-        return Scaffold(
-          body: SafeArea(
-            bottom: false,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.pagePadding,
-                24,
-                AppTheme.pagePadding,
-                36,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'crumb',
-                      style: TextStyle(
-                        color: AppColors.coral,
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1.4,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _isLoginMode ? 'Welcome back' : 'Join the campus table',
-                    style: Theme.of(context).textTheme.displaySmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _isLoginMode
-                        ? 'Sign in to share food and help your campus waste less.'
-                        : 'Create an account to post food and vote on what is still available.',
-                    style: const TextStyle(color: AppColors.cocoaMuted),
-                  ),
-                  const SizedBox(height: 30),
-                  if (!_isLoginMode) ...[
-                    const _SectionLabel('YOUR NAME'),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _firstNameController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'First name',
-                        prefixIcon: Icon(Icons.person_outline_rounded),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _lastNameController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Last name',
-                        prefixIcon: Icon(Icons.person_outline_rounded),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                  ],
-                  const _SectionLabel('SCHOOL EMAIL'),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    autofillHints: const [AutofillHints.email],
-                    decoration: const InputDecoration(
-                      labelText: 'you@university.edu',
-                      prefixIcon: Icon(Icons.mail_outline_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const _SectionLabel('PASSWORD'),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    textInputAction: TextInputAction.done,
-                    autofillHints: const [AutofillHints.password],
-                    onSubmitted: (_) => _submit(),
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded),
-                      suffixIcon: IconButton(
-                        tooltip: _obscurePassword
-                            ? 'Show password'
-                            : 'Hide password',
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: widget.authSession.isLoading ? null : _submit,
-                    child: widget.authSession.isLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(_isLoginMode ? 'Continue' : 'Create account'),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _isLoginMode
-                            ? 'New to Crumb?'
-                            : 'Already have an account?',
-                        style: const TextStyle(color: AppColors.cocoaMuted),
-                      ),
-                      TextButton(
-                        onPressed:
-                            widget.authSession.isLoading ? null : _toggleMode,
-                        child: Text(_isLoginMode ? 'Sign up' : 'Log in'),
-                      ),
-                    ],
-                  ),
-                  if (_isLoginMode)
-                    Center(
-                      child: TextButton(
-                        onPressed: widget.authSession.isLoading
-                            ? null
-                            : _resendVerification,
-                        child: const Text('Resend verification email'),
-                      ),
-                    ),
-                  if (_message != null) ...[
-                    const SizedBox(height: 16),
-                    _FeedbackBanner(
-                      message: _message!,
-                      icon: Icons.check_circle_outline_rounded,
-                      foreground: AppColors.mint,
-                      background: AppColors.mintSoft,
-                    ),
-                  ],
-                  if (_error != null) ...[
-                    const SizedBox(height: 16),
-                    _FeedbackBanner(
-                      message: _error!,
-                      icon: Icons.error_outline_rounded,
-                      foreground: AppColors.error,
-                      background: const Color(0xFFFFE6E2),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
+        if (authSession.token != null && authSession.sessionLoadFailed) {
+          return _SessionRetry(authSession: authSession);
+        }
+
+        return LoginPage(authSession: authSession);
       },
     );
   }
 }
 
-class _SignedInAccount extends StatelessWidget {
-  const _SignedInAccount({
-    required this.user,
-    required this.isLoading,
-    required this.onLogout,
-  });
+class _SessionRetry extends StatelessWidget {
+  const _SessionRetry({required this.authSession});
 
-  final Map<String, dynamic> user;
-  final bool isLoading;
-  final Future<void> Function() onLogout;
-
-  String get displayName =>
-      user['displayName']?.toString().trim().isNotEmpty == true
-          ? user['displayName'].toString().trim()
-          : 'Crumb member';
-
-  String get email => user['email']?.toString() ?? '';
-
-  String get initials {
-    final words = displayName.split(RegExp(r'\s+'));
-    return words.take(2).map((word) => word[0].toUpperCase()).join();
-  }
+  final AuthSession authSession;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppTheme.pagePadding,
-            24,
-            AppTheme.pagePadding,
-            36,
-          ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppTheme.pagePadding),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text('You', style: Theme.of(context).textTheme.displaySmall),
-              const SizedBox(height: 34),
-              Center(
-                child: Container(
-                  width: 118,
-                  height: 118,
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.mint, width: 4),
-                    boxShadow: AppTheme.softShadow,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    initials,
-                    style: const TextStyle(
-                      color: AppColors.cocoa,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
+              const Icon(Icons.wifi_off_rounded,
+                  color: AppColors.textSecondary, size: 40),
+              const SizedBox(height: 14),
               Text(
-                displayName,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium,
+                "We couldn't reach Crumb",
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 6),
               Text(
-                email,
+                'Check your connection and try again.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.cocoaMuted,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: 30),
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFFF866A), AppColors.coral],
-                  ),
-                  borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x3DF76543),
-                      blurRadius: 24,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.volunteer_activism_rounded,
-                      color: Colors.white,
-                      size: 38,
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Campus food sharer',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Thanks for helping good food find a home.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 22),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-                  boxShadow: AppTheme.softShadow,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: const BoxDecoration(
-                        color: AppColors.mintSoft,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.verified_user_outlined,
-                        color: AppColors.mint,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Signed in',
-                            style: TextStyle(fontWeight: FontWeight.w900),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Your account is ready to post and vote.',
-                            style: TextStyle(
-                              color: AppColors.cocoaMuted,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              OutlinedButton.icon(
-                onPressed: isLoading ? null : onLogout,
-                icon: const Icon(Icons.logout_rounded),
-                label: const Text('Log out'),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed:
+                    authSession.isLoading ? null : authSession.retryLoad,
+                child: authSession.isLoading
+                    ? const AuthButtonSpinner()
+                    : const Text('Try again'),
               ),
             ],
           ),
@@ -467,60 +79,616 @@ class _SignedInAccount extends StatelessWidget {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.label);
+class _SignedInAccount extends StatefulWidget {
+  const _SignedInAccount({required this.authSession});
 
-  final String label;
+  final AuthSession authSession;
+
+  @override
+  State<_SignedInAccount> createState() => _SignedInAccountState();
+}
+
+class _SignedInAccountState extends State<_SignedInAccount> {
+  late Future<List<FoodPost>> _dropsFuture;
+
+  Map<String, dynamic> get _user => widget.authSession.user ?? const {};
+  String get _displayName {
+    final name = (_user['displayName'] ?? '').toString().trim();
+    return name.isEmpty ? 'Crumb member' : name;
+  }
+
+  String get _email => (_user['email'] ?? '').toString();
+  String get _userId => (_user['id'] ?? '').toString();
+  bool get _verified => _user['verified'] == true;
+
+  @override
+  void initState() {
+    super.initState();
+    _dropsFuture = _loadDrops();
+  }
+
+  Future<List<FoodPost>> _loadDrops() async {
+    final posts = await PostsApi.getFeed();
+    return posts.where((post) => post.authorId == _userId).toList();
+  }
+
+  Future<void> _refresh() async {
+    final future = _loadDrops();
+    setState(() => _dropsFuture = future);
+    await future;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: const TextStyle(
-        color: AppColors.cocoaMuted,
-        fontSize: 12,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 0.6,
+    return Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.pagePadding,
+              24,
+              AppTheme.pagePadding,
+              36,
+            ),
+            children: [
+              Text('You', style: Theme.of(context).textTheme.displaySmall),
+              const SizedBox(height: 24),
+              _Identity(
+                displayName: _displayName,
+                email: _email,
+                avatarKey: _user['avatarKey']?.toString(),
+                avatarVersion: widget.authSession.avatarVersion,
+                verified: _verified,
+              ),
+              const SizedBox(height: 30),
+              _SectionHeading(
+                title: 'Your drops',
+                trailing: FutureBuilder<List<FoodPost>>(
+                  future: _dropsFuture,
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.length ?? 0;
+                    if (count == 0) return const SizedBox.shrink();
+                    return Text(
+                      '$count live',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: AppColors.coral,
+                          ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              FutureBuilder<List<FoodPost>>(
+                future: _dropsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const _DropsLoading();
+                  }
+                  if (snapshot.hasError) {
+                    return const _DropsError();
+                  }
+
+                  final drops = snapshot.data ?? const [];
+                  if (drops.isEmpty) {
+                    return const _EmptyDrops();
+                  }
+
+                  return Column(
+                    children: [
+                      for (final post in drops) ...[
+                        _DropRow(
+                          post: post,
+                          onTap: () => showPostDetailSheet(context, post),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 26),
+              const _SectionHeading(title: 'Account'),
+              const SizedBox(height: 12),
+              _AccountRows(authSession: widget.authSession),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _FeedbackBanner extends StatelessWidget {
-  const _FeedbackBanner({
-    required this.message,
-    required this.icon,
-    required this.foreground,
-    required this.background,
+class _Identity extends StatelessWidget {
+  const _Identity({
+    required this.displayName,
+    required this.email,
+    required this.avatarKey,
+    required this.avatarVersion,
+    required this.verified,
   });
 
-  final String message;
-  final IconData icon;
-  final Color foreground;
-  final Color background;
+  final String displayName;
+  final String email;
+  final String? avatarKey;
+  final int avatarVersion;
+  final bool verified;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        ProfileAvatar(
+          displayName: displayName,
+          avatarKey: avatarKey,
+          avatarVersion: avatarVersion,
+          size: 66,
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(displayName, style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 3),
+              Text(
+                email,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (verified) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE7F6EE),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.verified_rounded,
+                          color: Color(0xFF2F9D63), size: 13),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Verified',
+                        style:
+                            Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: const Color(0xFF2F9D63),
+                                ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading({required this.title, this.trailing});
+
+  final String title;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.headlineSmall),
+        if (trailing != null) trailing!,
+      ],
+    );
+  }
+}
+
+class _DropRow extends StatelessWidget {
+  const _DropRow({required this.post, required this.onTap});
+
+  final FoodPost post;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = FreshnessStatus.fromApi(post.status);
+    final pct = post.confidence == null
+        ? null
+        : (post.confidence!.clamp(0.0, 1.0) * 100).round();
+
+    return Material(
+      color: AppColors.card,
+      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Thumbnail(imageKey: post.imageKey),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _StatusPill(
+                          status: status,
+                          label: pct == null
+                              ? status.label
+                              : '${status.label} · $pct%',
+                        ),
+                        const Spacer(),
+                        _TimeLeft(expiresAt: post.expiresAt, color: status.dot),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      post.foodName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _metaLine(post),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: AppColors.textMuted,
+                            fontSize: 11.5,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _Tally(
+                          icon: Icons.check_rounded,
+                          value: post.presentVotes,
+                          color: const Color(0xFF2F9D63),
+                        ),
+                        const SizedBox(width: 12),
+                        _Tally(
+                          icon: Icons.close_rounded,
+                          value: post.goneVotes,
+                          color: AppColors.textMuted,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.chevron),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _metaLine(FoodPost post) {
+    final place = post.location.name;
+    final created = post.createdAt;
+    if (created == null) {
+      return place;
+    }
+    return '$place · ${_ago(created)}';
+  }
+}
+
+String _ago(DateTime time) {
+  final diff = DateTime.now().difference(time);
+  if (diff.inMinutes < 1) return 'just now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+  if (diff.inHours < 24) return '${diff.inHours}h ago';
+  return '${diff.inDays}d ago';
+}
+
+class _Thumbnail extends StatelessWidget {
+  const _Thumbnail({required this.imageKey});
+
+  final String? imageKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageKey != null && imageKey!.isNotEmpty;
+
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: AppColors.panelBg,
+        borderRadius: BorderRadius.circular(14),
+        image: hasImage
+            ? DecorationImage(
+                image: NetworkImage('${ApiConfig.imageBaseUrl}/$imageKey'),
+                fit: BoxFit.cover,
+              )
+            : null,
+      ),
+      child: hasImage
+          ? null
+          : const Icon(Icons.restaurant_rounded,
+              color: AppColors.placeholder, size: 24),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.status, required this.label});
+
+  final FreshnessStatus status;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(16),
+        color: status.badgeBg,
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Row(
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: status.badgeText,
+              fontSize: 10,
+            ),
+      ),
+    );
+  }
+}
+
+class _TimeLeft extends StatelessWidget {
+  const _TimeLeft({required this.expiresAt, required this.color});
+
+  final DateTime? expiresAt;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    if (expiresAt == null) {
+      return const SizedBox.shrink();
+    }
+
+    final minutes = expiresAt!.difference(DateTime.now()).inMinutes;
+    final label = minutes <= 0 ? 'expired' : '$minutes min';
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.schedule_rounded, size: 12, color: color),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: color),
+        ),
+      ],
+    );
+  }
+}
+
+class _Tally extends StatelessWidget {
+  const _Tally({required this.icon, required this.value, required this.color});
+
+  final IconData icon;
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 3),
+        Text(
+          '$value',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: color,
+                fontSize: 12,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DropsLoading extends StatelessWidget {
+  const _DropsLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      ),
+    );
+  }
+}
+
+class _DropsError extends StatelessWidget {
+  const _DropsError();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        "Couldn't load your drops. Pull down to try again.",
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+    );
+  }
+}
+
+class _EmptyDrops extends StatelessWidget {
+  const _EmptyDrops();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 30, 24, 26),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFECD8CB),
+          width: 1.5,
+          style: BorderStyle.solid,
+        ),
+      ),
+      child: Column(
         children: [
-          Icon(icon, color: foreground),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                color: foreground,
-                fontWeight: FontWeight.w700,
+          Image.asset('assets/eugene/silly.png', width: 88, height: 88),
+          const SizedBox(height: 14),
+          Text(
+            'No drops yet',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Spot free food? Eugene will keep it here until it runs out.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Tap ＋ Drop to post your find.')),
+              );
+            },
+            icon: const Icon(Icons.add_rounded, size: 20),
+            label: const Text('Drop your first find'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountRows extends StatelessWidget {
+  const _AccountRows({required this.authSession});
+
+  final AuthSession authSession;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          _AccountRow(
+            icon: Icons.person_outline_rounded,
+            label: 'Edit profile',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => EditProfilePage(authSession: authSession),
               ),
             ),
           ),
+          const _RowDivider(),
+          _AccountRow(
+            icon: Icons.lock_outline_rounded,
+            label: 'Change password',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ChangePasswordPage(authSession: authSession),
+              ),
+            ),
+          ),
+          const _RowDivider(),
+          _AccountRow(
+            icon: Icons.logout_rounded,
+            label: 'Log out',
+            danger: true,
+            onTap: authSession.logout,
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _RowDivider extends StatelessWidget {
+  const _RowDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 1, thickness: 1, color: AppColors.border);
+  }
+}
+
+class _AccountRow extends StatelessWidget {
+  const _AccountRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    const dangerColor = Color(0xFFC15A2C);
+    final color = danger ? dangerColor : AppColors.textPrimary;
+
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        height: 52,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: color,
+                        fontWeight:
+                            danger ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                ),
+              ),
+              if (!danger)
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppColors.chevron),
+            ],
+          ),
+        ),
       ),
     );
   }

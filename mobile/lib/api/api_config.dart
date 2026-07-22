@@ -1,13 +1,15 @@
 class ApiConfig {
-  // iOS simulator / Flutter web:
-  static const String baseUrl = 'http://162.243.165.45:5000/api';
+  // Defaults target the shared droplet. Override per-run without editing code:
+  //   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5001/api \
+  //               --dart-define=IMAGE_BASE_URL=https://my-bucket.s3.amazonaws.com
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://162.243.165.45:5000/api',
+  );
 
-  // Android emulator uses this instead:
-  // static const String baseUrl = 'http://10.0.2.2:5001/api';
-
-  // Real phone uses your Mac's LAN IP:
-  // static const String baseUrl = 'http://192.168.x.x:5001/api';
-
-  static const String imageBaseUrl =
-      'https://free-food-uploads-379604374199.s3.us-east-1.amazonaws.com';
+  static const String imageBaseUrl = String.fromEnvironment(
+    'IMAGE_BASE_URL',
+    defaultValue:
+        'https://free-food-uploads-379604374199.s3.us-east-1.amazonaws.com',
+  );
 }

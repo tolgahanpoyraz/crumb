@@ -57,6 +57,8 @@ class FoodPost {
     required this.locationDetail,
     required this.imageKey,
     required this.authorId,
+    required this.authorName,
+    required this.authorAvatarKey,
     required this.status,
     required this.confidence,
     required this.presentVotes,
@@ -81,6 +83,8 @@ class FoodPost {
   final String? locationDetail;
   final String? imageKey;
   final String authorId;
+  final String? authorName;
+  final String? authorAvatarKey;
   final String status;
   final double? confidence;
   final int presentVotes;
@@ -112,6 +116,8 @@ class FoodPost {
       locationDetail: _optionalString(json['locationDetail']),
       imageKey: _optionalString(json['imageKey']),
       authorId: _parseAuthorId(json['author']),
+      authorName: _optionalString(json['authorName']),
+      authorAvatarKey: _optionalString(json['authorAvatarKey']),
       status: (json['status'] ?? 'fresh').toString(),
       confidence: json['confidence'] is num
           ? (json['confidence'] as num).toDouble()
@@ -125,6 +131,33 @@ class FoodPost {
       expiresAt: _parseDate(json['expiresAt']),
       createdAt: _parseDate(json['createdAt']),
       updatedAt: _parseDate(json['updatedAt']),
+    );
+  }
+
+  FoodPost copyWith({
+    String? status,
+    double? confidence,
+    int? presentVotes,
+    int? goneVotes,
+  }) {
+    return FoodPost(
+      id: id,
+      foodName: foodName,
+      type: type,
+      dietaryTags: dietaryTags,
+      location: location,
+      locationDetail: locationDetail,
+      imageKey: imageKey,
+      authorId: authorId,
+      authorName: authorName,
+      authorAvatarKey: authorAvatarKey,
+      status: status ?? this.status,
+      confidence: confidence ?? this.confidence,
+      presentVotes: presentVotes ?? this.presentVotes,
+      goneVotes: goneVotes ?? this.goneVotes,
+      expiresAt: expiresAt,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
