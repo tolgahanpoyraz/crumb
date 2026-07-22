@@ -656,9 +656,9 @@
 
 .eugene-cycle {
   position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
+  flex: 0 0 auto;
+  align-self: center;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
@@ -670,12 +670,19 @@
   padding: 0;
   background: transparent;
   cursor: pointer;
-  width: 100%;
-  height: 100%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+}
+
+/* Brand panel: the wrapper fills the fixed circular mascot slot. In the feed
+   empty state it stays shrink-wrapped to the panda so the bubble anchors just
+   above its head and the stack below keeps its tight centered rhythm. */
+.brand-mascot .eugene-cycle,
+.brand-mascot .eugene-cycle-btn {
+  width: 100%;
+  height: 100%;
 }
 .empty-state .eugene-cycle-btn:focus-visible {
   outline: 3px solid var(--coral);
