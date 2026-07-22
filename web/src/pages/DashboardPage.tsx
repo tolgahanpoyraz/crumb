@@ -84,11 +84,16 @@ export function DashboardPage() {
     }
   }
 
-  function onDelete() {
+  async function onDelete() {
     if (!selectedPost) return;
-    removePost(selectedPost._id);
+    const id = selectedPost._id;
     setSelectedId(null);
-    toast.success('Drop deleted.');
+    try {
+      await removePost(id);
+      toast.success('Drop deleted.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed');
+    }
   }
 
   const empty = mineView

@@ -64,7 +64,7 @@ All 15 screens from the handoff:
 - **Images** upload via the API's presigned-S3 flow. If the server has no S3 bucket
   configured, uploads return 503 and the app posts without a photo (with a notice).
 - **Display name** is read-only in Settings — the API has no profile-update endpoint yet.
-- **Delete** removes a drop locally (posts auto-expire); there is no `DELETE /posts/:id`.
+- **Delete** calls `DELETE /posts/:id`; only the post's author can delete it.
 - **Email links:** for verification and password-reset links to land here, the API's
   `APP_URL` must point at this web app's origin (dev default: `http://localhost:5173`).
   In production, also add that origin to the API's `CORS_ORIGINS`. `GET /auth/verify`

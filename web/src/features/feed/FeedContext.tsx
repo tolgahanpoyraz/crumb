@@ -26,7 +26,7 @@ interface FeedContextValue {
   refresh: () => Promise<void>;
   createPost: (data: CreatePostRequest, image?: Blob | null) => Promise<Post>;
   vote: (postId: string, type: VoteType) => Promise<void>;
-  removePost: (postId: string) => void;
+  removePost: (postId: string) => Promise<void>;
 }
 
 const FeedContext = createContext<FeedContextValue | null>(null);
@@ -153,12 +153,20 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     [markVoted, refresh],
   );
 
-  // No DELETE endpoint exists server-side; posts self-expire. Remove locally so
-  // the author's "Delete" feels immediate — it'll stay gone on the next refresh
-  // once it expires, and reappear otherwise (acceptable given the short TTL).
-  const removePost = useCallback((postId: string) => {
-    setPosts((prev) => prev.filter((p) => p._id !== postId));
-  }, []);
+  // Optimistic removal so "Delete" feels immediate; on failure, refetch so the
+  // post reappears if it wasn't actually deleted server-side.
+  const removePost = useCallback(
+    async (postId: string) => {
+      setPosts((prev) => prev.filter((p) => p._id !== postId));
+      try {
+        await postsApi.deletePost(postId);
+      } catch (err) {
+        await refresh();
+        throw err;
+      }
+    },
+    [refresh],
+  );
 
   const value = useMemo<FeedContextValue>(
     () => ({ posts, locations, loading, error, voted, refresh, createPost, vote, removePost }),

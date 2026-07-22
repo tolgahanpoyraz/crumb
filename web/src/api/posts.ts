@@ -24,6 +24,10 @@ export function vote(postId: string, type: VoteType) {
   });
 }
 
+export function deletePost(postId: string) {
+  return request<void>(`/posts/${postId}`, { method: 'DELETE', auth: true });
+}
+
 // Presigned upload for a post photo: returns the object key to attach to the post.
 export async function uploadPostImage(file: Blob): Promise<string> {
   const { url, key } = await request<UploadUrlResponse>('/posts/upload-url', { auth: true });
