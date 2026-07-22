@@ -1,0 +1,2 @@
+Make it send verification email on initial signup
+
