@@ -52,7 +52,7 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="auth-screen">
+    <main className="auth-screen">
       <BrandPanel
         variant="green"
         headlineSize={32}
@@ -112,6 +112,6 @@ export function ResetPasswordPage() {
           </button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

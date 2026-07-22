@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Avatar } from '../../components/Avatar';
 import { Icon } from '../../components/Icon';
 import { useClickOutside } from '../../hooks/useClickOutside';
+import { initials } from '../../lib/images';
 import type { User } from '../../api/types';
 
 interface AvatarMenuProps {
@@ -22,7 +23,7 @@ export function AvatarMenu({ user, onOpenSettings, onLogout }: AvatarMenuProps) 
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={`${initials(user.displayName)} — account menu`}
       >
         <Avatar name={user.displayName} avatarKey={user.avatarKey} size={38} ring />
       </button>

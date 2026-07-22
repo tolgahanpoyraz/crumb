@@ -8,10 +8,10 @@ export interface StatusMeta {
 }
 
 export const STATUS_META: Record<PostStatus, StatusMeta> = {
-  fresh: { label: 'Fresh', dot: '#4FB783', bg: '#e7f6ee', text: '#2f9d63' },
-  likely: { label: 'Likely', dot: '#8bc23f', bg: '#f1f7e4', text: '#5e8019' },
-  fading: { label: 'Fading', dot: '#e8943a', bg: '#fdefe0', text: '#b06a1c' },
-  gone: { label: 'Gone', dot: '#c7b8ab', bg: '#f4eee6', text: '#8a7a6c' },
+  fresh: { label: 'Fresh', dot: '#4FB783', bg: '#e7f6ee', text: '#267e4f' },
+  likely: { label: 'Likely', dot: '#8bc23f', bg: '#f1f7e4', text: '#5a7a18' },
+  fading: { label: 'Fading', dot: '#e8943a', bg: '#fdefe0', text: '#9e5f19' },
+  gone: { label: 'Gone', dot: '#c7b8ab', bg: '#f4eee6', text: '#786a5e' },
 };
 
 // Mirrors the server's statusFromConfidence (api/src/confidence.ts) for any

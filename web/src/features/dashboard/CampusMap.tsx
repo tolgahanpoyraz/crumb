@@ -82,7 +82,11 @@ export function CampusMap({ posts, locations, selectedId, onSelect, userCoords, 
               className={`pin ${focused ? 'focused' : ''}`}
               style={{ left: `${pt.x}%`, top: `${pt.y}%`, zIndex: focused ? 20 : 12 }}
               onClick={() => onSelect(rep._id)}
-              aria-label={`${rep.foodName} at ${rep.location.name}`}
+              aria-label={
+                count > 1
+                  ? `${count} spots at ${rep.location.name}, including ${rep.foodName}`
+                  : `${rep.foodName} at ${rep.location.name}`
+              }
             >
               <span
                 className="drop"

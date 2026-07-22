@@ -6,6 +6,10 @@
   --coral-light: #f98e6e;
   --coral-deep: #c9553b;
   --coral-ink: #c15a2c;
+  /* Accessibility-adjusted coral: text links darkened to >=4.5:1 on cream,
+     button fill darkened so white body text on it clears 4.5:1. */
+  --coral-text: #b34b2f;
+  --coral-btn: #c55334;
 
   /* Surfaces */
   --app-bg: #fff3ec;
@@ -17,9 +21,9 @@
 
   /* Text */
   --text: #4a352d;
-  --text-2: #a56a58;
-  --text-muted: #b98a7a;
-  --field-label: #c19585;
+  --text-2: #935f4e;
+  --text-muted: #866459;
+  --field-label: #83655b;
   --placeholder: #c7a99e;
   --ink: #3a2a24;
 
@@ -33,22 +37,22 @@
   /* Freshness ramp */
   --fresh-dot: #4fb783;
   --fresh-bg: #e7f6ee;
-  --fresh-text: #2f9d63;
+  --fresh-text: #267e4f;
   --likely-dot: #8bc23f;
   --likely-bg: #f1f7e4;
-  --likely-text: #5e8019;
+  --likely-text: #5a7a18;
   --fading-dot: #e8943a;
   --fading-bg: #fdefe0;
-  --fading-text: #b06a1c;
+  --fading-text: #9e5f19;
   --gone-dot: #c7b8ab;
   --gone-bg: #f4eee6;
-  --gone-text: #8a7a6c;
+  --gone-text: #786a5e;
   --meter-gradient: linear-gradient(90deg, #4fb783, #8bc23f 38%, #e8943a 72%, #c7b8ab);
 
   /* Warning / expiry accent */
   --warn-bg: #fff2e2;
   --warn-border: #ffe0c2;
-  --warn-icon: #d98a2f;
+  --warn-icon: #9c6322;
   --warn-text: #a8701f;
   --warn-text-2: #c99a5e;
 

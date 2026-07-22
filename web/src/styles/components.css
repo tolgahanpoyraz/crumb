@@ -1,6 +1,6 @@
 /* Inline text link/button */
 .link {
-  color: var(--coral);
+  color: var(--coral-text);
   font-weight: 600;
   cursor: pointer;
   background: none;
@@ -39,7 +39,7 @@
   cursor: not-allowed;
 }
 .btn-primary {
-  background: var(--coral);
+  background: var(--coral-btn);
   color: #fff;
   box-shadow: var(--shadow-btn);
 }
@@ -86,7 +86,7 @@
   height: 42px;
   padding: 0 18px 0 14px;
   border-radius: 13px;
-  background: var(--coral);
+  background: var(--coral-btn);
   color: #fff;
   font-weight: 600;
   font-size: 14px;
@@ -277,7 +277,7 @@
   font-family: var(--font-body);
 }
 .checkbox .label .link {
-  color: var(--coral);
+  color: var(--coral-text);
   font-weight: 600;
 }
 
@@ -306,7 +306,7 @@
   border-color: var(--placeholder);
 }
 .chip.active {
-  background: var(--coral);
+  background: var(--coral-btn);
   border-color: var(--coral);
   color: #fff;
 }
@@ -336,7 +336,7 @@
   border-color: var(--placeholder);
 }
 .pick.active {
-  background: var(--coral);
+  background: var(--coral-btn);
   border-color: var(--coral);
   color: #fff;
 }
@@ -438,7 +438,7 @@
 }
 .tag-mine {
   background: var(--coral-tint);
-  color: var(--coral);
+  color: var(--coral-text);
 }
 
 /* ============================================================

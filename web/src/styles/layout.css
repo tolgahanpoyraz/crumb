@@ -43,7 +43,7 @@
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 24px;
-  color: var(--coral);
+  color: var(--coral-text);
   line-height: 1;
 }
 .topbar .spacer {
@@ -157,7 +157,7 @@
   margin-top: 3px;
 }
 .feed-count .hi {
-  color: var(--coral);
+  color: var(--coral-text);
   font-weight: 600;
 }
 .search {
@@ -306,7 +306,7 @@
 }
 .map-controls button:hover {
   background: var(--coral-tint);
-  color: var(--coral);
+  color: var(--coral-text);
 }
 .map-controls .div {
   height: 1px;
@@ -546,7 +546,7 @@
   transition: all 0.12s ease;
 }
 .vote-btn.present {
-  background: var(--coral);
+  background: var(--coral-btn);
   color: #fff;
   box-shadow: 0 12px 22px -10px rgba(240, 101, 63, 0.7);
 }
@@ -754,7 +754,7 @@
 .suggest.active {
   background: var(--coral-tint);
   border-color: #f7c9b8;
-  color: var(--coral);
+  color: var(--coral-text);
 }
 .modal-actions {
   display: flex;
@@ -830,7 +830,7 @@
 .picker-option:hover,
 .picker-option.active {
   background: var(--coral-tint);
-  color: var(--coral);
+  color: var(--coral-text);
 }
 .picker-empty {
   padding: 12px 10px;
@@ -882,7 +882,7 @@
 }
 .settings-nav .item.active {
   background: var(--coral-tint);
-  color: var(--coral);
+  color: var(--coral-text);
   font-weight: 600;
 }
 .settings-panel {
@@ -1108,7 +1108,7 @@
 .auth-back {
   font-size: 13px;
   font-weight: 600;
-  color: var(--coral);
+  color: var(--coral-text);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -1126,7 +1126,7 @@
   font-weight: 500;
 }
 .auth-alt .link {
-  color: var(--coral);
+  color: var(--coral-text);
   font-weight: 600;
   cursor: pointer;
   background: none;
@@ -1163,7 +1163,7 @@
 .forgot-link {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--coral);
+  color: var(--coral-text);
   cursor: pointer;
   background: none;
   border: none;

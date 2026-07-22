@@ -187,7 +187,12 @@ export function MapboxMap({ posts, locations, selectedId, onSelect, userCoords, 
       const size = focused ? 52 : SIZE_BY_STATUS[rep.status] ?? 38;
       const el = buildMarkerEl(color, size, count, focused);
       el.setAttribute('role', 'button');
-      el.setAttribute('aria-label', `${rep.foodName} at ${rep.location.name}`);
+      el.setAttribute(
+        'aria-label',
+        count > 1
+          ? `${count} spots at ${rep.location.name}, including ${rep.foodName}`
+          : `${rep.foodName} at ${rep.location.name}`,
+      );
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         onSelect(rep._id);

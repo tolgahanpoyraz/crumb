@@ -25,7 +25,7 @@ export function EmailVerifiedPage() {
           headline={greeting}
           body="Your @ucf.edu is verified — that's how we keep the map students-only."
         />
-        <div className="auth-form-side">
+        <main className="auth-form-side">
           <div className="auth-form auth-center">
             <div className="auth-hero-check lg">
               <Icon name="badgeCheck" size={46} strokeWidth={1.9} />
@@ -42,7 +42,7 @@ export function EmailVerifiedPage() {
               Log in to Crumb
             </button>
           </div>
-        </div>
+        </main>
       </div>
 
       <div className="verified-mobile">

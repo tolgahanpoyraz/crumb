@@ -25,7 +25,7 @@ export function CheckEmailPage() {
   }
 
   return (
-    <div className="auth-screen">
+    <main className="auth-screen">
       <BrandPanel
         variant="coral"
         showLogo
@@ -60,6 +60,6 @@ export function CheckEmailPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

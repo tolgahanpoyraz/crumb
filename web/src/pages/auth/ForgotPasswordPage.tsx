@@ -39,7 +39,7 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="auth-screen">
+    <main className="auth-screen">
       <BrandPanel
         variant="coral"
         showLogo
@@ -97,6 +97,6 @@ export function ForgotPasswordPage() {
           </div>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

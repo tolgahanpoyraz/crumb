@@ -55,7 +55,7 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="auth-screen">
+    <main className="auth-screen">
       <div className="auth-form-side">
         <form className="auth-form wide" onSubmit={onSubmit}>
           <h1 className="auth-h">Join Crumb</h1>
@@ -162,6 +162,6 @@ export function RegisterPage() {
           { icon: 'check', text: 'Vote to keep the map honest' },
         ]}
       />
-    </div>
+    </main>
   );
 }

@@ -29,7 +29,7 @@ export function VerifyEmailPage() {
   }
 
   return (
-    <div className="auth-screen">
+    <main className="auth-screen">
       <BrandPanel
         variant="coral"
         showLogo
@@ -103,6 +103,6 @@ export function VerifyEmailPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

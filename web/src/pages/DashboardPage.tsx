@@ -118,7 +118,7 @@ export function DashboardPage() {
         }}
       />
 
-      <div className={`app-body ${selectedPost ? 'has-selection' : ''}`}>
+      <main className={`app-body ${selectedPost ? 'has-selection' : ''}`}>
         <FeedRail
           title={mineView ? 'Your drops' : 'Hot & fresh right now'}
           countLine={
@@ -199,7 +199,7 @@ export function DashboardPage() {
             />
           )}
         </div>
-      </div>
+      </main>
 
       {postOpen && (
         <PostFoodModal
