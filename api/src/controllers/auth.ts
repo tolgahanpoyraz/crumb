@@ -8,6 +8,7 @@ import { type IUser } from '../models/User.js';
 import logger from '../config/logger.js';
 import { AppError } from '../errors.js';
 import { type RegisterInput, type LoginInput, type EmailOnlyInput, type ResetPasswordInput, type ChangePasswordInput } from '../schemas.js';
+import { tierFor, nextTierAt } from '../reputation.js';
 
 function signToken(userId: unknown): string {
     return jwt.sign({ id: userId }, config.jwtSecret, { expiresIn: '24h' });
@@ -70,7 +71,15 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
 export async function getMe(req: Request, res: Response): Promise<void> {
     const { id } = req.auth as JwtPayload;
     const user = await authService.getUserById(id);
-    res.status(200).json({ user: { ...publicUser(user), verified: user.verified } });
+    res.status(200).json({
+        user: {
+            ...publicUser(user),
+            verified: user.verified,
+            reputation: user.reputation,
+            tier: tierFor(user.reputation),
+            nextTierAt: nextTierAt(user.reputation),
+        },
+    });
 }
 
 export async function getAvatarUploadUrl(req: Request, res: Response): Promise<void> {

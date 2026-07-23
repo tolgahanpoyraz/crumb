@@ -26,6 +26,7 @@ export interface IPost {
     expiresAt: Date;
     tallies: { present: number; gone: number };
     status: PostStatus;
+    authorPenalized: boolean;
 }
 
 type PostModel = Model<IPost>;
@@ -47,6 +48,7 @@ const postSchema = new Schema<IPost, PostModel>(
             gone: { type: Number, default: 0 },
         },
         status: { type: String, enum: [...POST_STATUSES], default: 'fresh' },
+        authorPenalized: { type: Boolean, default: false },
     },
     { timestamps: true },
 );
