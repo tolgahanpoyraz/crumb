@@ -106,15 +106,34 @@ class AuthScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.panelBg,
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _BrandHeader(
-              sticker: sticker,
-              tagline: tagline,
-              showBack: showBack,
-              variant: variant,
+            Stack(
+              children: [
+                _BrandHeader(
+                  sticker: sticker,
+                  tagline: tagline,
+                  showBack: showBack,
+                  variant: variant,
+                ),
+                // Rounded panel edge overlapping the gradient, per the handoff.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    height: 24,
+                    decoration: const BoxDecoration(
+                      color: AppColors.panelBg,
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(30)),
+                    ),
+                  ),
+                ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -164,7 +183,7 @@ class _BrandHeader extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(30, 14, 30, 44),
+          padding: const EdgeInsets.fromLTRB(30, 14, 30, 46),
           child: Column(
             children: [
               if (showBack)

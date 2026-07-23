@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'features/auth/account_page.dart';
 import 'features/auth/auth_session.dart';
+import 'features/auth/login_page.dart';
 import 'features/posts/create_post_page.dart';
 import 'features/posts/feed_page.dart';
 import 'theme/app_theme.dart';
@@ -73,6 +74,10 @@ class _AppShellState extends State<AppShell> {
     return AnimatedBuilder(
       animation: widget.authSession,
       builder: (context, _) {
+        if (!widget.authSession.isLoggedIn) {
+          return LoginPage(authSession: widget.authSession);
+        }
+
         return Scaffold(
           body: IndexedStack(
             index: _selectedIndex == 0 ? 0 : 1,
@@ -81,7 +86,6 @@ class _AppShellState extends State<AppShell> {
                 key: ValueKey(_feedReloadVersion),
                 authSession: widget.authSession,
                 onRequireLogin: _goToLogin,
-                onOpenDrop: _openDrop,
               ),
               AccountPage(
                 authSession: widget.authSession,
@@ -218,18 +222,10 @@ class _DropItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 40,
-              height: 30,
-              decoration: BoxDecoration(
-                color: AppColors.coral,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.add_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
+            const Icon(
+              Icons.add_rounded,
+              color: AppColors.coral,
+              size: 24,
             ),
             const SizedBox(height: 4),
             const Text(
