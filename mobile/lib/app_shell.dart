@@ -223,18 +223,10 @@ class _DropItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 40,
-              height: 30,
-              decoration: BoxDecoration(
-                color: AppColors.coral,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.add_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
+            const Icon(
+              Icons.add_rounded,
+              color: AppColors.coral,
+              size: 24,
             ),
             const SizedBox(height: 4),
             const Text(
