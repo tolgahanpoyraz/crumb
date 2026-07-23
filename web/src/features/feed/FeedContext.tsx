@@ -15,7 +15,7 @@ import { useAuth } from '../../auth/AuthContext';
 import type { CampusLocation, CreatePostRequest, Post, VoteType } from '../../api/types';
 
 const VOTED_KEY_PREFIX = 'crumb.voted.';
-const POLL_MS = 45000;
+const POLL_MS = 15000;
 
 interface FeedContextValue {
   posts: Post[];
@@ -101,14 +101,22 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Keep the feed live while the tab is visible.
+  // Keep the feed live while the tab is visible, and refresh the moment it
+  // regains focus so new drops show up without waiting for the next tick.
   const refreshRef = useRef(refresh);
   refreshRef.current = refresh;
   useEffect(() => {
-    const id = setInterval(() => {
+    const tick = () => {
       if (!document.hidden) refreshRef.current();
-    }, POLL_MS);
-    return () => clearInterval(id);
+    };
+    const id = setInterval(tick, POLL_MS);
+    document.addEventListener('visibilitychange', tick);
+    window.addEventListener('focus', tick);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', tick);
+      window.removeEventListener('focus', tick);
+    };
   }, []);
 
   const createPost = useCallback(async (data: CreatePostRequest, image?: Blob | null) => {
