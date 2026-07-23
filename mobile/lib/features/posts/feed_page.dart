@@ -34,9 +34,9 @@ class FeedPage extends StatefulWidget {
   State<FeedPage> createState() => _FeedPageState();
 }
 
-class _FeedPageState extends State<FeedPage> {
+class _FeedPageState extends State<FeedPage> with WidgetsBindingObserver {
   static const LatLng _ucfCenter = LatLng(28.6024, -81.2001);
-  static const Duration _pollInterval = Duration(seconds: 45);
+  static const Duration _pollInterval = Duration(seconds: 15);
   static const List<double> _sheetDetents = [0.14, 0.45, 0.92];
 
   final MapController _mapController = MapController();
@@ -70,17 +70,28 @@ class _FeedPageState extends State<FeedPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initialLoad();
     _pollTimer = Timer.periodic(_pollInterval, (_) => _refreshFeed());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
     _searchController.dispose();
     _mapController.dispose();
     _sheetController.dispose();
     super.dispose();
+  }
+
+  // Refresh the moment the app returns to the foreground so new drops show up
+  // without waiting for the next poll tick.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshFeed();
+    }
   }
 
   Future<void> _initialLoad() async {
