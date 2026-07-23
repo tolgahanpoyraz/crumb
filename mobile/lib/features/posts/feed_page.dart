@@ -37,9 +37,12 @@ class FeedPage extends StatefulWidget {
 class _FeedPageState extends State<FeedPage> {
   static const LatLng _ucfCenter = LatLng(28.6024, -81.2001);
   static const Duration _pollInterval = Duration(seconds: 45);
+  static const List<double> _sheetDetents = [0.14, 0.45, 0.92];
 
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
 
   List<FoodPost> _posts = [];
   List<CampusLocation> _locations = [];
@@ -76,6 +79,7 @@ class _FeedPageState extends State<FeedPage> {
     _pollTimer?.cancel();
     _searchController.dispose();
     _mapController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -396,11 +400,12 @@ class _FeedPageState extends State<FeedPage> {
             child: _buildTopControls(),
           ),
           DraggableScrollableSheet(
+            controller: _sheetController,
             initialChildSize: 0.45,
-            minChildSize: 0.14,
-            maxChildSize: 0.92,
+            minChildSize: _sheetDetents.first,
+            maxChildSize: _sheetDetents.last,
             snap: true,
-            snapSizes: const [0.14, 0.45, 0.92],
+            snapSizes: _sheetDetents,
             builder: (context, scrollController) {
               return _buildSheet(scrollController);
             },
@@ -697,6 +702,45 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
+  void _onGrabberDrag(DragUpdateDetails details) {
+    if (!_sheetController.isAttached) {
+      return;
+    }
+
+    final height = MediaQuery.of(context).size.height;
+    _sheetController.jumpTo(
+      (_sheetController.size - details.delta.dy / height)
+          .clamp(_sheetDetents.first, _sheetDetents.last),
+    );
+  }
+
+  void _onGrabberDragEnd(DragEndDetails details) {
+    if (!_sheetController.isAttached) {
+      return;
+    }
+
+    final velocity = details.velocity.pixelsPerSecond.dy;
+    final size = _sheetController.size;
+
+    double target;
+    if (velocity < -300) {
+      target = _sheetDetents
+          .firstWhere((d) => d > size, orElse: () => _sheetDetents.last);
+    } else if (velocity > 300) {
+      target = _sheetDetents
+          .lastWhere((d) => d < size, orElse: () => _sheetDetents.first);
+    } else {
+      target = _sheetDetents
+          .reduce((a, b) => (size - a).abs() < (size - b).abs() ? a : b);
+    }
+
+    _sheetController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   Widget _buildSheet(ScrollController scrollController) {
     return Container(
       decoration: const BoxDecoration(
@@ -713,13 +757,24 @@ class _FeedPageState extends State<FeedPage> {
       ),
       child: Column(
         children: [
-          const SizedBox(height: 10),
-          Container(
-            width: 44,
-            height: 5,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6D3C6),
-              borderRadius: BorderRadius.circular(3),
+          // The grabber sits outside the sheet's scrollable, so it needs its
+          // own drag handling to move the sheet.
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onVerticalDragUpdate: _onGrabberDrag,
+            onVerticalDragEnd: _onGrabberDragEnd,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 10),
+              alignment: Alignment.center,
+              child: Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE6D3C6),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
             ),
           ),
           Expanded(
