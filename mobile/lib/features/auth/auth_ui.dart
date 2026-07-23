@@ -252,11 +252,12 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 72,
         titleSpacing: AppTheme.pagePadding,
         leadingWidth: AppTheme.pagePadding + 52,
         leading: Padding(
           padding: const EdgeInsets.only(left: AppTheme.pagePadding),
-          child: _BackButton(),
+          child: Center(child: _BackButton()),
         ),
         title: Text(title, style: Theme.of(context).textTheme.headlineSmall),
       ),
@@ -269,7 +270,13 @@ class SettingsScaffold extends StatelessWidget {
             AppTheme.pagePadding,
             32,
           ),
-          child: child,
+          // Phone-width column even when the window is wide (desktop/web runs).
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: child,
+            ),
+          ),
         ),
       ),
     );

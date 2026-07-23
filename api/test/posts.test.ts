@@ -79,6 +79,9 @@ describe('POST /api/posts', () => {
             status: 'fresh',
         });
         expect(new Date(res.body.post.expiresAt).getTime()).toBeGreaterThan(Date.now());
+        // Clients render the meter straight from this response, before any feed
+        // refresh — a missing confidence puts the thumb at the wrong end.
+        expect(res.body.post.confidence).toBeCloseTo(0.88, 2);
     });
 
     it('includes the author display name on the created post', async () => {
@@ -218,36 +221,40 @@ describe('POST /api/posts/:id/vote', () => {
     });
 
     it('a "gone" vote drops confidence below the fresh band', async () => {
-        const token = await authUser();
-        const { body } = await createPost(token);
-        const res = await vote(token, body.post._id, 'gone');
+        const author = await authUser();
+        const voter = await authUser();
+        const { body } = await createPost(author);
+        const res = await vote(voter, body.post._id, 'gone');
         expect(res.status).toBe(200);
         expect(res.body.status).toBe('fading');
         expect(res.body.confidence).toBeLessThan(0.5);
     });
 
     it('a "present" vote keeps it fresh and confident', async () => {
-        const token = await authUser();
-        const { body } = await createPost(token);
-        const res = await vote(token, body.post._id, 'present');
+        const author = await authUser();
+        const voter = await authUser();
+        const { body } = await createPost(author);
+        const res = await vote(voter, body.post._id, 'present');
         expect(res.body.status).toBe('fresh');
         expect(res.body.confidence).toBeGreaterThan(0.9);
     });
 
     it('rejects a second vote from the same user with 409', async () => {
-        const token = await authUser();
-        const { body } = await createPost(token);
-        await vote(token, body.post._id, 'present').expect(200);
-        const res = await vote(token, body.post._id, 'gone');
+        const author = await authUser();
+        const voter = await authUser();
+        const { body } = await createPost(author);
+        await vote(voter, body.post._id, 'present').expect(200);
+        const res = await vote(voter, body.post._id, 'gone');
         expect(res.status).toBe(409);
     });
 
     it('lets two different users each vote once', async () => {
         const author = await authUser();
-        const other = await authUser();
+        const u1 = await authUser();
+        const u2 = await authUser();
         const { body } = await createPost(author);
-        await vote(author, body.post._id, 'present').expect(200);
-        await vote(other, body.post._id, 'gone').expect(200);
+        await vote(u1, body.post._id, 'present').expect(200);
+        await vote(u2, body.post._id, 'gone').expect(200);
         expect(await Vote.countDocuments({ post: body.post._id })).toBe(2);
     });
 
@@ -271,9 +278,10 @@ describe('POST /api/posts/:id/vote', () => {
     });
 
     it('two "gone" votes kill the post and drop it from the feed', async () => {
+        const author = await authUser();
         const u1 = await authUser();
         const u2 = await authUser();
-        const { body } = await createPost(u1);
+        const { body } = await createPost(author);
         await vote(u1, body.post._id, 'gone').expect(200);
         const res = await vote(u2, body.post._id, 'gone');
         expect(res.body.status).toBe('gone');

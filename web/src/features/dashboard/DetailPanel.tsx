@@ -2,6 +2,7 @@ import type { Post, VoteType } from '../../api/types';
 import { FoodPhoto } from '../../components/FoodPhoto';
 import { Avatar } from '../../components/Avatar';
 import { StatusBadge } from '../../components/StatusBadge';
+import { TierBadge } from '../../components/TierBadge';
 import { FreshnessMeter } from '../../components/FreshnessMeter';
 import { Icon } from '../../components/Icon';
 import { STATUS_META } from '../../lib/freshness';
@@ -53,7 +54,13 @@ export function DetailPanel({ post, mine, voted, distanceMi, now, onClose, onVot
               <Avatar name={post.authorName} avatarKey={post.authorAvatarKey} size={28} />
             </span>
             <div className="txt">
-              Posted by <strong>{post.authorName}</strong> · {relativeTime(post.createdAt, now)}
+              <span>
+                Posted by <strong>{post.authorName}</strong>
+              </span>
+              {post.authorTier !== undefined && post.authorTier >= 1 && (
+                <TierBadge tier={post.authorTier} variant="sm" />
+              )}
+              <span>· {relativeTime(post.createdAt, now)}</span>
             </div>
           </div>
         ) : (

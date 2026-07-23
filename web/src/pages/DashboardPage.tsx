@@ -6,6 +6,7 @@ import { MapboxMap } from '../features/dashboard/MapboxMap';
 import { DetailPanel } from '../features/dashboard/DetailPanel';
 import { PostFoodModal } from '../features/post/PostFoodModal';
 import { SettingsModal } from '../features/settings/SettingsModal';
+import { LeaderboardModal } from '../features/leaderboard/LeaderboardModal';
 import { EugeneCelebration } from '../components/EugeneCelebration';
 import type { PrimaryFilter } from '../features/dashboard/FilterChips';
 import { useFeed } from '../features/feed/FeedContext';
@@ -30,6 +31,7 @@ export function DashboardPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [postOpen, setPostOpen] = useState(false);
   const [settings, setSettings] = useState<{ open: boolean; tab: 'profile' | 'security' }>({ open: false, tab: 'profile' });
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [celebrate, setCelebrate] = useState<{ key: number; message: string } | null>(null);
   const dismissCelebrate = useCallback(() => setCelebrate(null), []);
 
@@ -113,6 +115,7 @@ export function DashboardPage() {
       <TopBar
         user={user!}
         onPost={() => setPostOpen(true)}
+        onOpenLeaderboard={() => setLeaderboardOpen(true)}
         onOpenSettings={() => setSettings({ open: true, tab: 'profile' })}
         onLogout={logout}
         onHome={() => {
@@ -225,6 +228,8 @@ export function DashboardPage() {
       {settings.open && (
         <SettingsModal initialTab={settings.tab} onClose={() => setSettings((s) => ({ ...s, open: false }))} />
       )}
+
+      {leaderboardOpen && <LeaderboardModal onClose={() => setLeaderboardOpen(false)} />}
     </div>
   );
 }

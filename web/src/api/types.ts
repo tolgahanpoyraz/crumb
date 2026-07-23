@@ -8,12 +8,17 @@ export type DietaryTag = 'vegetarian' | 'vegan' | 'halal' | 'kosher' | 'gluten-f
 
 export type VoteType = 'present' | 'gone';
 
+export type Tier = 0 | 1 | 2 | 3;
+
 export interface User {
   id: string;
   displayName: string;
   email: string;
   avatarKey?: string;
   verified?: boolean;
+  reputation?: number;
+  tier?: Tier;
+  nextTierAt?: number | null;
 }
 
 export interface CampusLocation {
@@ -39,6 +44,7 @@ export interface Post {
   author: string;
   authorName?: string;
   authorAvatarKey?: string;
+  authorTier?: Tier;
   status: PostStatus;
   confidence: number;
   tallies: Tallies;
@@ -95,4 +101,25 @@ export interface LocationsResponse {
 export interface UploadUrlResponse {
   url: string;
   key: string;
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  displayName: string;
+  avatarKey?: string;
+  weeklyPoints: number;
+  tier: Tier;
+  rank: number;
+}
+
+export interface LeaderboardMe {
+  rank: number | null;
+  weeklyPoints: number;
+  reputation: number;
+  tier: Tier;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  me: LeaderboardMe;
 }

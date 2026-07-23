@@ -12,8 +12,8 @@ const VOTE_WEIGHT: Record<VoteType, number> = {
 
 export const sigmoid = (E: number): number => 1 / (1 + Math.exp(-E));
 
-export function applyVote(E: number, type: VoteType): number {
-    return E + VOTE_WEIGHT[type];
+export function applyVote(E: number, type: VoteType, weight = 1): number {
+    return E + VOTE_WEIGHT[type] * weight;
 }
 
 export function decayE(E: number, minutesElapsed: number): number {

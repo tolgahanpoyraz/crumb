@@ -107,6 +107,15 @@ const PATHS: Record<string, ReactNode> = {
     </>
   ),
   trash: <path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />,
+  trophy: (
+    <>
+      <path d="M8 4h8v5a4 4 0 0 1-8 0z" />
+      <path d="M8 5H5v2a3 3 0 0 0 3 3" />
+      <path d="M16 5h3v2a3 3 0 0 1-3 3" />
+      <line x1="12" y1="13" x2="12" y2="17" />
+      <path d="M8.5 20.5h7l-.6-3h-5.8z" />
+    </>
+  ),
   info: (
     <>
       <circle cx="12" cy="12" r="9" />

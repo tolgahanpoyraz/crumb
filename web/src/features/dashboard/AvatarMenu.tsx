@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Avatar } from '../../components/Avatar';
 import { Icon } from '../../components/Icon';
+import { TierBadge } from '../../components/TierBadge';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { initials } from '../../lib/images';
 import type { User } from '../../api/types';
@@ -35,6 +36,12 @@ export function AvatarMenu({ user, onOpenSettings, onLogout }: AvatarMenuProps) 
             <div style={{ minWidth: 0 }}>
               <div className="name">{user.displayName}</div>
               <div className="email">{user.email}</div>
+              {user.tier !== undefined && (
+                <div className="tier-line">
+                  <TierBadge tier={user.tier} variant="sm" />
+                  <span>{user.reputation ?? 0} crumbs</span>
+                </div>
+              )}
             </div>
           </div>
           <div className="menu-divider" />

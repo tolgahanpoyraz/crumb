@@ -22,6 +22,24 @@ class AuthSession extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _token != null && _user != null;
 
+  /// Reputation fields off the /auth/me user (an untyped map). Default to a
+  /// Crumb-tier profile when absent, e.g. right after a login response that
+  /// predates the reputation refresh.
+  int get reputation {
+    final value = _user?['reputation'];
+    return value is num ? value.toInt() : 0;
+  }
+
+  int get tier {
+    final value = _user?['tier'];
+    return value is num ? value.toInt().clamp(0, 3) : 0;
+  }
+
+  int? get nextTierAt {
+    final value = _user?['nextTierAt'];
+    return value is num ? value.toInt() : null;
+  }
+
   /// Bumped each time [updateAvatar] succeeds, so avatar URLs built from the
   /// (unchanged) S3 key can bust the image cache.
   int get avatarVersion => _avatarVersion;

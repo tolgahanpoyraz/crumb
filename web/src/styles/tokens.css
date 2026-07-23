@@ -45,7 +45,7 @@
   --gone-dot: #c7b8ab;
   --gone-bg: #f4eee6;
   --gone-text: #786a5e;
-  --meter-gradient: linear-gradient(90deg, #4fb783, #8bc23f 38%, #e8943a 72%, #c7b8ab);
+  --meter-gradient: linear-gradient(90deg, #c7b8ab, #e8943a 28%, #8bc23f 62%, #4fb783);
 
   /* Warning / expiry accent */
   --warn-bg: #fff2e2;

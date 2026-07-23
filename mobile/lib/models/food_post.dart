@@ -59,6 +59,7 @@ class FoodPost {
     required this.authorId,
     required this.authorName,
     required this.authorAvatarKey,
+    required this.authorTier,
     required this.status,
     required this.confidence,
     required this.presentVotes,
@@ -85,6 +86,7 @@ class FoodPost {
   final String authorId;
   final String? authorName;
   final String? authorAvatarKey;
+  final int? authorTier;
   final String status;
   final double? confidence;
   final int presentVotes;
@@ -118,6 +120,8 @@ class FoodPost {
       authorId: _parseAuthorId(json['author']),
       authorName: _optionalString(json['authorName']),
       authorAvatarKey: _optionalString(json['authorAvatarKey']),
+      authorTier:
+          json['authorTier'] is num ? (json['authorTier'] as num).toInt() : null,
       status: (json['status'] ?? 'fresh').toString(),
       confidence: json['confidence'] is num
           ? (json['confidence'] as num).toDouble()
@@ -151,6 +155,7 @@ class FoodPost {
       authorId: authorId,
       authorName: authorName,
       authorAvatarKey: authorAvatarKey,
+      authorTier: authorTier,
       status: status ?? this.status,
       confidence: confidence ?? this.confidence,
       presentVotes: presentVotes ?? this.presentVotes,

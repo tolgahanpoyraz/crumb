@@ -4,7 +4,9 @@ import '../../api/posts_api.dart';
 import '../../models/food_post.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/freshness.dart';
+import '../../theme/reputation.dart';
 import '../auth/auth_session.dart';
+import '../reputation/tier_badge.dart';
 import 'post_format.dart';
 import 'post_widgets.dart';
 
@@ -427,8 +429,11 @@ class _PosterLine extends StatelessWidget {
     }
 
     final name = post.authorName?.trim();
+    final authorTier = post.authorTier;
+    final showTier = authorTier != null && authorTier >= 1;
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 28,
@@ -452,33 +457,51 @@ class _PosterLine extends StatelessWidget {
                 ),
         ),
         const SizedBox(width: 9),
+        // Wrap with explicit spacing so the badge never clumps against the name
+        // or the "· time" fragment, and wraps cleanly on narrow screens.
         Flexible(
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-              ),
-              children: name == null || name.isEmpty
-                  ? [TextSpan(text: 'Posted $time')]
-                  : [
-                      const TextSpan(text: 'Posted by '),
-                      TextSpan(
-                        text: name,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: name == null || name.isEmpty
+                ? [
+                    Text('Posted $time', style: _metaStyle),
+                  ]
+                : [
+                    RichText(
+                      text: TextSpan(
+                        style: _metaStyle,
+                        children: [
+                          const TextSpan(text: 'Posted by '),
+                          TextSpan(
+                            text: name,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                      TextSpan(text: ' · $time'),
-                    ],
-            ),
+                    ),
+                    if (showTier)
+                      TierBadge(
+                        tier: ReputationTier.fromLevel(authorTier),
+                        small: true,
+                      ),
+                    Text('· $time', style: _metaStyle),
+                  ],
           ),
         ),
       ],
     );
   }
+
+  static const _metaStyle = TextStyle(
+    color: AppColors.textSecondary,
+    fontSize: 12.5,
+    fontWeight: FontWeight.w500,
+  );
 }
 
 class _LocationLine extends StatelessWidget {

@@ -5,7 +5,10 @@ import '../../api/posts_api.dart';
 import '../../models/food_post.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/freshness.dart';
+import '../../theme/reputation.dart';
 import '../posts/post_detail_sheet.dart';
+import '../reputation/leaderboard_page.dart';
+import '../reputation/tier_badge.dart';
 import 'auth_session.dart';
 import 'auth_ui.dart';
 import 'change_password_page.dart';
@@ -141,7 +144,11 @@ class _SignedInAccountState extends State<_SignedInAccount> {
                 avatarKey: _user['avatarKey']?.toString(),
                 avatarVersion: widget.authSession.avatarVersion,
                 verified: _verified,
+                tier: ReputationTier.fromLevel(widget.authSession.tier),
+                reputation: widget.authSession.reputation,
               ),
+              const SizedBox(height: 16),
+              _TopDroppersCard(authSession: widget.authSession),
               const SizedBox(height: 30),
               _SectionHeading(
                 title: 'Your drops',
@@ -207,6 +214,8 @@ class _Identity extends StatelessWidget {
     required this.avatarKey,
     required this.avatarVersion,
     required this.verified,
+    required this.tier,
+    required this.reputation,
   });
 
   final String displayName;
@@ -214,6 +223,8 @@ class _Identity extends StatelessWidget {
   final String? avatarKey;
   final int avatarVersion;
   final bool verified;
+  final ReputationTier tier;
+  final int reputation;
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +242,20 @@ class _Identity extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(displayName, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 3),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  TierBadge(tier: tier, small: true),
+                  const SizedBox(width: 7),
+                  Text(
+                    '$reputation crumbs',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
               Text(
                 email,
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -265,6 +289,74 @@ class _Identity extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _TopDroppersCard extends StatelessWidget {
+  const _TopDroppersCard({required this.authSession});
+
+  final AuthSession authSession;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.card,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => LeaderboardPage(authSession: authSession),
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF2EC),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  color: AppColors.coral,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Top droppers',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Your standing & this week's top 10",
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textMuted,
+                            fontSize: 12,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.chevron),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

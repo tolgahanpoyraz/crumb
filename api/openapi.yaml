@@ -22,6 +22,8 @@ tags:
     description: Food posts feed, voting, and image uploads
   - name: Locations
     description: Campus locations users pick from when posting
+  - name: Users
+    description: Reputation ("crumbs") and the weekly leaderboard
 
 paths:
   /health:
@@ -450,6 +452,14 @@ paths:
                 error: type must be 'present' or 'gone'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The caller is the post's author and may not vote on their own drop
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: You can't vote on your own drop
         '404':
           description: Post not found
           content:
@@ -522,6 +532,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LocationsResponse'
+
+  /users/leaderboard:
+    get:
+      tags: [Users]
+      summary: Weekly reputation leaderboard
+      description: >
+        Top earners over a rolling 7-day window, most points first, plus the
+        caller's own weekly standing. Tier is derived from each user's lifetime
+        reputation, not the weekly total.
+      operationId: getLeaderboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The weekly leaderboard and the caller's standing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
 components:
   securitySchemes:
@@ -609,6 +640,25 @@ components:
         verified:
           type: boolean
           example: true
+        reputation:
+          type: integer
+          description: >
+            Lifetime "crumbs" the user has earned. Present on GET /auth/me.
+          example: 120
+        tier:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: >
+            Trust tier derived from total reputation (0–3). Present on GET /auth/me.
+          example: 1
+        nextTierAt:
+          type: integer
+          nullable: true
+          description: >
+            Reputation needed to reach the next tier, or null at the top tier.
+            Present on GET /auth/me.
+          example: 150
 
     RegisterRequest:
       type: object
@@ -780,6 +830,14 @@ components:
             S3 object key for the author's avatar, when they have one set. The
             client builds the display URL from this, same as imageKey.
           example: avatars/665f1c2e9b1e8a0012a3b4c5.jpg
+        authorTier:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: >
+            The author's trust tier (0–3), derived on read from their reputation.
+            A higher tier seeds the post at a higher starting confidence.
+          example: 2
         status:
           $ref: '#/components/schemas/PostStatus'
         confidence:
@@ -900,6 +958,66 @@ components:
           $ref: '#/components/schemas/PostStatus'
         tallies:
           $ref: '#/components/schemas/Tallies'
+
+    LeaderboardEntry:
+      type: object
+      required: [userId, weeklyPoints, tier, rank]
+      properties:
+        userId:
+          type: string
+          example: 665f1c2e9b1e8a0012a3b4c5
+        displayName:
+          type: string
+          description: Absent only if the user record is unavailable.
+          example: Maya
+        avatarKey:
+          type: string
+          description: S3 object key for the user's avatar, when set.
+          example: avatars/665f1c2e9b1e8a0012a3b4c5.jpg
+        weeklyPoints:
+          type: integer
+          description: Reputation earned in the last 7 days.
+          example: 42
+        tier:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: Trust tier from the user's lifetime reputation.
+          example: 2
+        rank:
+          type: integer
+          description: 1-based rank; ties share a rank.
+          example: 1
+
+    LeaderboardResponse:
+      type: object
+      required: [entries, me]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+        me:
+          type: object
+          required: [rank, weeklyPoints, reputation, tier]
+          properties:
+            rank:
+              type: integer
+              nullable: true
+              description: The caller's rank, or null if they earned nothing this week.
+              example: 5
+            weeklyPoints:
+              type: integer
+              example: 12
+            reputation:
+              type: integer
+              description: The caller's lifetime reputation.
+              example: 120
+            tier:
+              type: integer
+              minimum: 0
+              maximum: 3
+              example: 1
 
     UploadUrlResponse:
       type: object
