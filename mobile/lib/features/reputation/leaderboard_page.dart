@@ -73,7 +73,14 @@ class _Body extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _StandingCard(me: data.me),
-        const SizedBox(height: 18),
+        const SizedBox(height: 22),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 10),
+          child: Text(
+            'This week',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
         if (data.entries.isEmpty)
           const _EmptyState()
         else
@@ -104,14 +111,15 @@ class _StandingCard extends StatelessWidget {
     final progress = tierProgressFor(me.reputation, tier, tier.nextThreshold);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 15),
       decoration: BoxDecoration(
-        color: AppColors.panelBg,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         border: Border.all(color: AppColors.border),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
@@ -138,32 +146,30 @@ class _StandingCard extends StatelessWidget {
               ),
             ],
           ),
-          if (progress.atTop) ...[
-            const SizedBox(height: 12),
-            Text(
-              '${ReputationTier.goldenCroissant.glyph} Top of the batch',
-              style: const TextStyle(
-                color: Color(0xFF9A6B2F),
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
-              ),
-            ),
-          ] else ...[
+          if (!progress.atTop) ...[
             const SizedBox(height: 14),
             _ProgressBar(fraction: progress.fraction),
-            const SizedBox(height: 7),
-            Text(
-              progress.label ?? '',
-              style: const TextStyle(
-                color: AppColors.textMuted,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
           ],
-          const SizedBox(height: 12),
-          _StandingMeta(me: me),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  progress.atTop
+                      ? '${ReputationTier.goldenCroissant.glyph} Top of the batch'
+                      : progress.label ?? '',
+                  style: TextStyle(
+                    color: progress.atTop
+                        ? const Color(0xFF9A6B2F)
+                        : AppColors.textMuted,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              _StandingMeta(me: me),
+            ],
+          ),
         ],
       ),
     );
@@ -241,7 +247,7 @@ class _TopList extends StatelessWidget {
       children: [
         for (final entry in entries) ...[
           _LeaderRow(entry: entry, isMe: entry.userId == currentUserId),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
         ],
       ],
     );
@@ -276,10 +282,13 @@ class _LeaderRow extends StatelessWidget {
     final tier = ReputationTier.fromLevel(entry.tier);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isMe ? _meTint : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        color: isMe ? _meTint : AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isMe ? const Color(0xFFF6C4AE) : AppColors.border,
+        ),
       ),
       child: Row(
         children: [
