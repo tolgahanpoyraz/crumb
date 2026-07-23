@@ -25,12 +25,10 @@ class FeedPage extends StatefulWidget {
     super.key,
     required this.authSession,
     required this.onRequireLogin,
-    required this.onOpenDrop,
   });
 
   final AuthSession authSession;
   final VoidCallback onRequireLogin;
-  final VoidCallback onOpenDrop;
 
   @override
   State<FeedPage> createState() => _FeedPageState();
@@ -754,7 +752,6 @@ class _FeedPageState extends State<FeedPage> {
       return _EmptyState(
         scrollController: scrollController,
         onRefresh: _refreshFeed,
-        onOpenDrop: widget.onOpenDrop,
       );
     }
 
@@ -1243,12 +1240,10 @@ class _EmptyState extends StatelessWidget {
   const _EmptyState({
     required this.scrollController,
     required this.onRefresh,
-    required this.onOpenDrop,
   });
 
   final ScrollController scrollController;
   final Future<void> Function() onRefresh;
-  final VoidCallback onOpenDrop;
 
   @override
   Widget build(BuildContext context) {
@@ -1288,14 +1283,6 @@ class _EmptyState extends StatelessWidget {
               color: AppColors.textMuted,
               fontSize: 12,
               fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Center(
-            child: FilledButton.icon(
-              onPressed: onOpenDrop,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Drop free food'),
             ),
           ),
         ],

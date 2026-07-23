@@ -86,7 +86,6 @@ class _AppShellState extends State<AppShell> {
                 key: ValueKey(_feedReloadVersion),
                 authSession: widget.authSession,
                 onRequireLogin: _goToLogin,
-                onOpenDrop: _openDrop,
               ),
               AccountPage(
                 authSession: widget.authSession,
