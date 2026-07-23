@@ -22,10 +22,10 @@ export function FreshnessMeter({ status, confidence, votes }: FreshnessMeterProp
         <div className="meter-thumb" style={{ left: `${pos}%`, borderColor: color }} />
       </div>
       <div className="meter-scale">
-        <span style={{ color: '#2f9d63' }}>FRESH</span>
-        <span>LIKELY</span>
-        <span>FADING</span>
         <span>GONE</span>
+        <span>FADING</span>
+        <span>LIKELY</span>
+        <span style={{ color: '#2f9d63' }}>FRESH</span>
       </div>
     </div>
   );

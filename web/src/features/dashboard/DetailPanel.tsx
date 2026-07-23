@@ -54,11 +54,13 @@ export function DetailPanel({ post, mine, voted, distanceMi, now, onClose, onVot
               <Avatar name={post.authorName} avatarKey={post.authorAvatarKey} size={28} />
             </span>
             <div className="txt">
-              Posted by <strong>{post.authorName}</strong>
+              <span>
+                Posted by <strong>{post.authorName}</strong>
+              </span>
               {post.authorTier !== undefined && post.authorTier >= 1 && (
                 <TierBadge tier={post.authorTier} variant="sm" />
-              )}{' '}
-              · {relativeTime(post.createdAt, now)}
+              )}
+              <span>· {relativeTime(post.createdAt, now)}</span>
             </div>
           </div>
         ) : (

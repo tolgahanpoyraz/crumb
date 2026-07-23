@@ -24,9 +24,9 @@ export function confidencePct(confidence: number): number {
   return Math.round(confidence * 100);
 }
 
-// Freshness meter runs FRESH (left) → GONE (right); a more-confident post sits
-// further left. Clamped so the thumb never clips the rounded ends.
+// Freshness meter runs GONE (left) → FRESH (right); a more-confident post sits
+// further right. Clamped so the thumb never clips the rounded ends.
 export function meterPosition(confidence: number): number {
-  const pos = (1 - confidence) * 100;
+  const pos = confidence * 100;
   return Math.min(96, Math.max(4, pos));
 }

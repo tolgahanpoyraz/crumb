@@ -542,6 +542,10 @@
   display: inline-flex;
 }
 .detail-poster .txt {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   color: var(--text-2);
   font-weight: 500;
