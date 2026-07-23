@@ -29,6 +29,7 @@ export async function createPost(authorId: string, data: NewPost) {
     return {
         ...post.toObject(),
         location: resolveLocation(post.location),
+        confidence,
         authorName: author?.displayName,
         authorAvatarKey: author?.avatarKey,
         authorTier,

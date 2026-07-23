@@ -79,6 +79,9 @@ describe('POST /api/posts', () => {
             status: 'fresh',
         });
         expect(new Date(res.body.post.expiresAt).getTime()).toBeGreaterThan(Date.now());
+        // Clients render the meter straight from this response, before any feed
+        // refresh — a missing confidence puts the thumb at the wrong end.
+        expect(res.body.post.confidence).toBeCloseTo(0.88, 2);
     });
 
     it('includes the author display name on the created post', async () => {
