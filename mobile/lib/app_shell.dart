@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'features/auth/account_page.dart';
 import 'features/auth/auth_session.dart';
+import 'features/auth/login_page.dart';
 import 'features/posts/create_post_page.dart';
 import 'features/posts/feed_page.dart';
 import 'theme/app_theme.dart';
@@ -73,6 +74,10 @@ class _AppShellState extends State<AppShell> {
     return AnimatedBuilder(
       animation: widget.authSession,
       builder: (context, _) {
+        if (!widget.authSession.isLoggedIn) {
+          return LoginPage(authSession: widget.authSession);
+        }
+
         return Scaffold(
           body: IndexedStack(
             index: _selectedIndex == 0 ? 0 : 1,
