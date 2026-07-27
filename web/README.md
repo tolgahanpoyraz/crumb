@@ -25,6 +25,7 @@ setup needed). Point it at your API with `API_PROXY_TARGET` (default
 |---|---|
 | `npm run dev` | Vite dev server with HMR + `/api` proxy |
 | `npm run build` | Type-check (`tsc -b`) then production build to `dist/` |
+| `npm test` | Run the Jest unit tests |
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | Oxlint |
 
